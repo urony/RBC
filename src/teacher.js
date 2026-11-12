@@ -25,6 +25,10 @@ function teacherPage(root) {
       <p class="small muted">קישור לתלמידים (בלי פתרונות):</p><div class="row"><input type="text" readonly value="${esc(studentLink)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(studentLink)}">העתקה</button></div>
       <p class="small muted" style="margin-top:12px">קישור למורה (עם פתרונות וטופס איסוף תוצאות):</p><div class="row"><input type="text" readonly value="${esc(teacherLink)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(teacherLink)}">העתקה</button></div>
       <div class="explain" style="margin-top:12px">ℹ️ קישור המורה מוגן רק במילת סוד בכתובת (<span class="ltr">?t=${CFG.TEACHER_KEY}</span>). זו הגנה פשוטה למניעת כניסה בטעות – לא הגנה אמיתית: תלמיד סקרן שיקרא את קוד הדף יוכל למצוא את המילה. אפשר להחליף את המילה במשתנה <span class="ltr">TEACHER_KEY</span> בתחילת הקוד.</div></div>
+    <div class="card"><h2>✂️ קישורים נפרדים לכל חלק</h2>
+      <p class="small muted">כל קישור פותח לתלמידים רק את מה שנבחר, בלי שיראו את שאר החלקים. אפשר גם לחבר כמה חלקים: <span class="ltr">?only=a,c</span></p>
+      ${[['a', '📘 חלק א׳ – ללמוד ולשחק'], ['b', '🧪 חלק ב׳ – אבחון מבדיקות דם'], ['c', '🚑 חלק ג׳ – תורנות מיון']].map(([k, t]) => { const l = base + '?only=' + k; return `<p class="small" style="margin:12px 0 4px"><b>${t}</b></p><div class="row"><input type="text" readonly value="${esc(l)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(l)}">העתקה</button></div>`; }).join('')}
+      <details style="margin-top:14px"><summary><b>קישור למשחק בודד</b></summary>${GAMES.map(g => { const l = base + '?only=' + g.id; return `<p class="small" style="margin:10px 0 4px">${g.icon} ${g.title}</p><div class="row"><input type="text" readonly value="${esc(l)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(l)}">העתקה</button></div>`; }).join('')}</details></div>
     <div class="card"><h2>📥 איסוף תוצאות תלמידים</h2>
       <p class="small muted">כל תלמיד לוחץ על "שליחת תוצאות" ומעביר לכם קוד שמתחיל ב-HL1. הדביקו כאן קוד אחד או כמה (מופרדים בשורות).</p>
       <textarea id="paste" placeholder="הדביקו כאן קודים…" style="direction:ltr"></textarea>

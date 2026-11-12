@@ -169,41 +169,38 @@ const SHIFTS = {
 };
 Object.values(SHIFTS).forEach(S => registerGame({
   id: S.id, part: 'C', icon: S.icon, title: S.title, desc: S.desc,
-  teacherNote: 'כל מטופל כולל שיחה, בדיקה גופנית, הזמנת בדיקות (עם "עלות"), אבחנה, סיבה וטיפול. ציון מטופל: אבחנה 40, סיבה 15, טיפול 25, יעילות בדיקות 20.',
+  teacherNote: 'כל מטופל כולל אנמנזה, בדיקה גופנית, תוצאות בדיקות דם, אבחנה, סיבה וטיפול. ציון מטופל: אבחנה 50, סיבה 20, טיפול 30.',
   mount(root, ctx) { runShift(root, ctx, S.ids); },
 }));
 
 function runShift(root, ctx, ids) {
   const list = shuffle(ids.map(id => CASES.find(c => c.id === id)));
-  let idx = 0; const results = [], budget = 8 * list.length; let spent = 0;
+  let idx = 0; const results = [];
   const host = el('<div></div>'); root.appendChild(host);
-  root.insertAdjacentHTML('afterbegin', say('ברוכים הבאים למיון! 🚑 לכל מטופל: דברו, בדקו, הזמינו בדיקות (כל בדיקה עולה "זמן"), ואז אבחנו וטפלו. הזמנה חכמה = ניקוד גבוה.', 'happy'));
+  root.insertAdjacentHTML('afterbegin', say('ברוכים הבאים למיון! 🚑 לכל מטופל: קחו אנמנזה, בצעו בדיקה גופנית, עיינו בבדיקות הדם, ואז אבחנו וטפלו.', 'happy'));
   const vit = (k, v, bad) => `<div><b style="${bad ? 'color:var(--bad)' : ''}">${v}</b>${k}</div>`;
   function patient() {
     if (idx >= list.length) { summary(); return; }
-    const c = list[idx], p = caseLabs(c), ordered = new Set(), st = { dx: null, cause: null, tx: null }; host.innerHTML = '';
+    const c = list[idx], p = caseLabs(c), st = { dx: null, cause: null, tx: null }; host.innerHTML = '';
     const v = c.vitals;
-    const head = el(`<div><div class="row sp small muted"><span>מטופל ${idx + 1} מתוך ${list.length}</span><span id="spent">⏱️ ${spent}/${budget}</span></div><div class="bar" style="margin:8px 0"><i style="width:${100 * idx / list.length}%"></i></div></div>`);
+    const head = el(`<div><div class="row sp small muted"><span>מטופל ${idx + 1} מתוך ${list.length}</span></div><div class="bar" style="margin:8px 0"><i style="width:${100 * idx / list.length}%"></i></div></div>`);
     const card = el(`<div class="card"><div class="patient-head">${ART['patient_' + c.id] ? `<img class="avatar" src="${ART['patient_' + c.id]}" alt="${c.name}">` : `<div class="avatar">${c.emoji}</div>`}<div><h3 style="margin:0">${c.name}, ${c.sex === 'F' ? 'בת' : 'בן'} ${c.age}</h3><div class="muted small">${c.quip}</div></div></div>
       <p style="margin:10px 0 4px"><b>תלונה:</b> ${c.cc}</p>
       <div class="vitals">${vit('דופק', v.hr, v.hr > 100)}${vit('לחץ דם', v.bp, false)}${vit('סטורציה', v.spo2 + '%', v.spo2 < 94)}${vit('חום', v.temp, v.temp >= 38)}</div>
-      ${IS_TEACHER ? `<div class="tnote"><b>מפתח:</b> אבחנה – ${DXOPT[c.dx]}${c.urgent ? ' · <b>חירום</b>' : ''} · בדיקות חיוניות: ${c.must.map(k => TESTS[k].n).join(', ')} · נקודת לימוד: ${c.teach}</div>` : ''}</div>`);
-    const tabs = el(`<div class="tabs"><button data-t="talk" class="on">💬 שיחה</button><button data-t="exam">🩺 בדיקה</button><button data-t="tests">🧪 בדיקות</button><button data-t="dx">✅ אבחנה וטיפול</button></div>`);
+      ${IS_TEACHER ? `<div class="tnote"><b>מפתח:</b> אבחנה – ${DXOPT[c.dx]}${c.urgent ? ' · <b>חירום</b>' : ''} · נקודת לימוד: ${c.teach}</div>` : ''}</div>`);
+    const tabs = el(`<div class="tabs"><button data-t="talk" class="on">💬 אנמנזה</button><button data-t="exam">🩺 בדיקה גופנית</button><button data-t="tests">🧪 בדיקות דם</button><button data-t="dx">✅ אבחנה וטיפול</button></div>`);
     const P = { talk: el('<div class="card"></div>'), exam: el('<div class="card hide"></div>'), tests: el('<div class="card hide"></div>'), dx: el('<div class="card hide"></div>') };
     host.append(head, card, tabs, ...Object.values(P));
-    // שיחה
-    P.talk.innerHTML = `<p class="muted small">שאלו את המטופל – לחצו על שאלה כדי לקבל תשובה.</p><div class="col" id="qs">${c.hist.map((h, i) => `<button class="btn" data-q="${i}" style="justify-content:flex-start;text-align:start">❓ ${h[0]}</button>`).join('')}</div><div id="ans"></div>`;
-    P.talk.addEventListener('click', e => { const b = e.target.closest('[data-q]'); if (!b || b.disabled) return; b.disabled = true; b.classList.add('good'); $('#ans', P.talk).insertAdjacentHTML('beforeend', `<div class="qa"><b>${c.hist[+b.dataset.q][0]}</b><br>${c.hist[+b.dataset.q][1]}</div>`); });
+    // אנמנזה
+    P.talk.innerHTML = `<button class="btn teal block" id="doan">💬 קחו אנמנזה</button><div id="anl" class="hide" style="margin-top:12px"><p class="muted small">מה המטופל/ת מספר/ת:</p>${c.hist.map(h => `<div class="qa"><span class="muted small">${h[0]}</span><br>${h[1]}</div>`).join('')}</div>`;
+    $('#doan', P.talk).onclick = () => { $('#anl', P.talk).classList.remove('hide'); $('#doan', P.talk).classList.add('hide'); };
     // בדיקה גופנית
     P.exam.innerHTML = `<button class="btn teal block" id="doex">🩺 בצעו בדיקה גופנית</button><ul id="exl" class="hide" style="padding-inline-start:20px;margin:12px 0 0">${c.exam.map(x => `<li style="margin:6px 0">${x}</li>`).join('')}</ul>`;
     $('#doex', P.exam).onclick = () => { $('#exl', P.exam).classList.remove('hide'); $('#doex', P.exam).classList.add('hide'); };
-    // בדיקות
-    P.tests.innerHTML = `<p class="muted small">כל בדיקה עולה "זמן" (יחידות). הזמינו רק מה שצריך לאבחנה.</p><div class="col" id="tl">${Object.keys(TESTS).map(k => `<button class="test ${IS_TEACHER && c.must.includes(k) ? 't-ok' : ''}" data-k="${k}"><span>${TESTS[k].ic} ${TESTS[k].n}</span><span class="cost">${TESTS[k].c} יח׳</span></button>`).join('')}</div><h3 style="margin-top:16px">תוצאות</h3><div id="res" class="muted small">עוד לא הוזמנו בדיקות.</div>`;
-    P.tests.addEventListener('click', e => {
-      const b = e.target.closest('[data-k]'); if (!b || ordered.has(b.dataset.k)) return; const k = b.dataset.k; ordered.add(k); b.classList.add('done'); spent += TESTS[k].c; $('#spent', head).textContent = `⏱️ ${spent}/${budget}`;
-      const res = $('#res', P.tests); if (res.classList.contains('muted')) { res.classList.remove('muted', 'small'); res.innerHTML = ''; }
-      res.insertAdjacentHTML('afterbegin', `<div class="slip"><b>${TESTS[k].ic} ${TESTS[k].n}</b>${testHTML(c, p, k)}</div>`);
-    });
+    // בדיקות דם
+    const shown = Object.keys(TESTS).filter(k => c.must.includes(k) || c.useful.includes(k));
+    P.tests.innerHTML = `<button class="btn teal block" id="dobl">🧪 קבלו תוצאות בדיקות דם</button><div id="res" class="hide" style="margin-top:12px">${shown.map(k => `<div class="slip"><b>${TESTS[k].ic} ${TESTS[k].n}</b>${testHTML(c, p, k)}</div>`).join('')}</div>`;
+    $('#dobl', P.tests).onclick = () => { $('#res', P.tests).classList.remove('hide'); $('#dobl', P.tests).classList.add('hide'); };
     // אבחנה
     P.dx.innerHTML = '<p class="muted small">אחרי שאספתם מספיק מידע – אבחנו. אפשר לחזור ללשוניות הקודמות בכל עת.</p>';
     const dxHost = el('<div></div>'); P.dx.appendChild(dxHost);
@@ -215,14 +212,10 @@ function runShift(root, ctx, ids) {
         onDone: ok => { st.dx = ok; const b2 = el('<div style="margin-top:16px"></div>'); dxHost.appendChild(b2); mcq(b2, { q: c.cause[0], tag: 'cause', options: c.cause[1], onDone: ok2 => { st.cause = ok2; const b3 = el('<div style="margin-top:16px"></div>'); dxHost.appendChild(b3); mcq(b3, { q: 'מה הטיפול המתאים?', tag: c.urgent ? 'urgent' : 'treatment', options: c.tx, onDone: ok3 => { st.tx = ok3; done(); } }); } }); } });
     };
     function done() {
-      const extra = [...ordered].filter(k => !c.useful.includes(k) && !c.must.includes(k)), miss = c.must.filter(k => !ordered.has(k));
-      if (extra.length || miss.length) Store.mistake('er_tests');
-      const eff = Math.max(0, 20 - 4 * extra.length - 5 * miss.length);
-      const pts = (st.dx ? 40 : 0) + (st.cause ? 15 : 0) + (st.tx ? 25 : 0) + eff;
-      results.push({ c, pts, dx: st.dx, cause: st.cause, tx: st.tx, eff, extra, miss, cost: [...ordered].reduce((s, k) => s + TESTS[k].c, 0) });
+      const pts = (st.dx ? 50 : 0) + (st.cause ? 20 : 0) + (st.tx ? 30 : 0);
+      results.push({ c, pts, dx: st.dx, cause: st.cause, tx: st.tx });
       const sm = el(`<div class="card" style="margin-top:14px"><h3>סיכום המטופל: ${pts}/100</h3>
-        <div class="kpi"><div><b>${st.dx ? 40 : 0}/40</b><span>אבחנה</span></div><div><b>${st.cause ? 15 : 0}/15</b><span>סיבה</span></div><div><b>${st.tx ? 25 : 0}/25</b><span>טיפול</span></div><div><b>${eff}/20</b><span>יעילות בדיקות</span></div></div>
-        ${extra.length ? `<p class="small">🧾 בדיקות מיותרות: ${extra.map(k => TESTS[k].n).join(', ')}</p>` : ''}${miss.length ? `<p class="small">⚠️ בדיקות חיוניות שלא הוזמנו: ${miss.map(k => TESTS[k].n).join(', ')}</p>` : ''}
+        <div class="kpi"><div><b>${st.dx ? 50 : 0}/50</b><span>אבחנה</span></div><div><b>${st.cause ? 20 : 0}/20</b><span>סיבה</span></div><div><b>${st.tx ? 30 : 0}/30</b><span>טיפול</span></div></div>
         <div class="explain row" style="flex-wrap:nowrap">${c.art && ART[c.art] ? `<img src="${ART[c.art]}" alt="" style="width:84px;height:auto;flex:0 0 84px">` : ''}<span>📌 ${c.teach}</span></div><button class="btn primary block" id="nx" style="margin-top:12px">${idx + 1 >= list.length ? 'לסיכום המשמרת 🏁' : 'המטופל הבא ←'}</button></div>`);
       P.dx.appendChild(sm); sm.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       $('#nx', sm).onclick = () => { idx++; patient(); window.scrollTo(0, 0); };
@@ -232,8 +225,7 @@ function runShift(root, ctx, ids) {
   function summary() {
     const avg = Math.round(results.reduce((s, r) => s + r.pts, 0) / results.length);
     const rank = avg >= 90 ? ['🏅 המטולוג/ית על', 'כמעט שלא טעית. את/ה מוכנ/ה לבגרות – ולמיון!'] : avg >= 75 ? ['🥇 רופא/ה מצטיינ/ת', 'עבודה מקצועית. עוד קצת דיוק בבדיקות ותהיו בפסגה.'] : avg >= 55 ? ['🩺 מתמחה מבטיח/ה', 'בסיס טוב. כדאי לחזור על דפוסי המעבדה.'] : ['🎓 סטודנט/ית שנה א׳', 'כולם התחילו כאן. נסו שוב – בכל משמרת לומדים משהו חדש.'];
-    const totalCost = results.reduce((s, r) => s + r.cost, 0);
-    const extra = `<div class="card"><h3>${rank[0]}</h3><p>${rank[1]}</p><div class="kpi"><div><b>${avg}</b><span>ממוצע למטופל</span></div><div><b>${results.filter(r => r.dx).length}/${results.length}</b><span>אבחנות נכונות</span></div><div><b>${totalCost}</b><span>יחידות בדיקות (תקציב ${budget})</span></div></div>
+    const extra = `<div class="card"><h3>${rank[0]}</h3><p>${rank[1]}</p><div class="kpi"><div><b>${avg}</b><span>ממוצע למטופל</span></div><div><b>${results.filter(r => r.dx).length}/${results.length}</b><span>אבחנות נכונות</span></div></div>
       <table class="lab"><thead><tr><th>מטופל</th><th>אבחנה</th><th>ניקוד</th></tr></thead><tbody>${results.map(r => `<tr><td>${r.c.emoji} ${r.c.name}</td><td>${r.dx ? '✅' : '❌'} ${DXOPT[r.c.dx]}</td><td class="v">${r.pts}</td></tr>`).join('')}</tbody></table>
       <button class="btn block" id="sharebtn" style="margin-top:12px">📤 שליחת התוצאות למורה</button></div>`;
     ctx.finish(avg, extra);

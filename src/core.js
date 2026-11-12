@@ -8,6 +8,9 @@ const CFG = {
 };
 const QS = new URLSearchParams(location.search);
 const IS_TEACHER = QS.get('t') === CFG.TEACHER_KEY;
+// נעילה לחלק/משחק מסוים: ?only=a  |  ?only=a,b  |  ?only=b_l1 (לא חל על מצב מורה)
+const ONLY = IS_TEACHER ? [] : (QS.get('only') || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
+const LOCK = ONLY.length > 0;
 const IMG = (typeof IMG_DATA !== 'undefined') ? IMG_DATA : {};
 const ART = (typeof ART_DATA !== 'undefined') ? ART_DATA : {};
 
@@ -123,7 +126,7 @@ const starsHTML = n => `<span class="stars" aria-label="${n} כוכבים">${[1,
 
 /* ===== שאלה אמריקאית (MCQ) – רכיב משותף ===== */
 function mcq(parent, spec) {
-  const letters = ['א', 'ב', 'ג', 'ד', 'ה'];
+  const letters = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י'];
   let opts = spec.options.map((o, i) => ({ ...o, _i: i }));
   if (spec.shuffle !== false) opts = shuffle(opts);
   const box = el(`<div class="mcq"></div>`);
