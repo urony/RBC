@@ -70,6 +70,7 @@ const ANEM_CARDS = {
     figs: [],
   },
 };
+const ARTOF = { ida: 'iron', mega: 'b12', hemo: 'spleen', acd: 'kidney', aplastic: 'wbc' };
 registerGame({
   id: 'a_cards', part: 'A', sec: 'anemia', icon: '🗂️', title: 'כרטיסי האנמיות', desc: 'סיכום אינטראקטיבי של חמש האנמיות – מנגנון, גורמים, קליניקה, אבחון וטיפול',
   teacherNote: 'סיכום הלימוד לפי ספר המגמה. היחידה מסתיימת כשנפתחו כל חמשת הכרטיסים.',
@@ -81,7 +82,7 @@ registerGame({
     const host = el('<div></div>'); root.appendChild(host);
     function draw() {
       const C = ANEM_CARDS[cur], I = ANEMIA_CATS[cur];
-      const body = sec === 'mech' ? `<p>${C.mech}</p>` : sec === 'figs' ? (C.figs.length ? C.figs.map(f => fig(f[0], f[1])).join('') : '<p class="muted">לאנמיה אפלסטית אין איור ייעודי בספר – ראו את טבלת ההשוואה ביחידה הבאה.</p>') : `<ul style="padding-inline-start:20px;margin:0">${C[sec].map(x => `<li style="margin:7px 0">${x}</li>`).join('')}</ul>`;
+      const body = sec === 'mech' ? `<div class="row" style="flex-wrap:nowrap;align-items:flex-start">${ARTOF[cur] && ART[ARTOF[cur]] ? `<img src="${ART[ARTOF[cur]]}" alt="" style="width:96px;flex:0 0 96px">` : ''}<p style="margin:0">${C.mech}</p></div>` : sec === 'figs' ? (C.figs.length ? C.figs.map(f => fig(f[0], f[1])).join('') : '<p class="muted">לאנמיה אפלסטית אין איור ייעודי בספר – ראו את טבלת ההשוואה ביחידה הבאה.</p>') : `<ul style="padding-inline-start:20px;margin:0">${C[sec].map(x => `<li style="margin:7px 0">${x}</li>`).join('')}</ul>`;
       host.innerHTML = `<div class="tabs">${keys.map(k => `<button data-k="${k}" class="${k === cur ? 'on' : ''}">${ANEMIA_CATS[k].ic} ${ANEMIA_CATS[k].short}${seen.has(k) ? '' : ''}</button>`).join('')}</div>
         <div class="card"><h2>${I.ic} ${I.n}</h2><div class="tabs">${SEC.map(s => `<button data-s="${s[0]}" class="${s[0] === sec ? 'on' : ''}">${s[1]}</button>`).join('')}</div>${body}</div>
         <div class="muted small center">נצפו ${seen.size}/5 כרטיסים</div>

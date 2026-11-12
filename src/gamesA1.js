@@ -148,7 +148,7 @@ registerGame({
       }
       ask1();
     }
-    root.insertAdjacentHTML('afterbegin', say('בכל תרחיש תנבאו קודם – ורק אז תראו מה קורה. ניחוש לפני בדיקה הוא הדרך הכי טובה ללמוד! 🔮', 'wink'));
+    root.insertAdjacentHTML('afterbegin', say('אני הכליה, ואני מחליטה כמה EPO לשלוח. בכל תרחיש נבאו קודם – ורק אז תראו מה קורה. 🔮', 'wink', 'kidney'));
     root.appendChild(el(fig('epo', 'משוב שלילי של EPO (איור מהספר)').replace('<figure', '<figure style="margin-top:0"')));
     round();
   },
@@ -169,7 +169,7 @@ registerGame({
       'חיידקי המעי מפרקים אותו לפיגמנט שצובע את הצואה בחום',
       'חלק קטן נספג חזרה ומופרש בשתן כאורובילינוגן (צבע צהוב)',
     ];
-    root.insertAdjacentHTML('afterbegin', say('כל כדורית שוכבת על הגב בטחול בסוף חייה… אבל לא נזרקת – ממחזרים! סדרו את המסע שלה.', 'wink'));
+    root.insertAdjacentHTML('afterbegin', say('כל כדורית עוברת אצלי בדיקת תוקף: 120 יום ויציאה. אבל היא לא נזרקת – ממחזרים! סדרו את המסע שלה.', 'wink', 'spleen'));
     let ord = 0;
     orderGame(root, { steps, onDone: p => { ord = p; root.innerHTML = ''; root.insertAdjacentHTML('afterbegin', fig('bili', 'מסלול הבילירובין (איור מהספר)')); quiz(); } });
     function quiz() {

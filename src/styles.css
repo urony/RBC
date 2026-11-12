@@ -217,3 +217,4 @@ table.cmp thead th{font-size:.7rem;line-height:1.15}
 table.cmp thead th .small{font-size:.66rem}
 table.cmp tbody th{width:21%;font-size:.72rem}
 table.cmp td b{font-size:1rem}
+img.avatar{object-fit:cover;background:var(--primary-soft);border:2px solid var(--surface);box-shadow:var(--shadow-s)}

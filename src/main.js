@@ -14,7 +14,7 @@ themeInit();
 
 function shell() {
   document.title = CFG.TITLE;
-  document.body.innerHTML = `<header class="topbar"><div class="brand" id="logo"><span style="width:34px;height:34px;display:inline-block">${mascotSVG('happy')}</span><span>${CFG.TITLE}</span></div><div class="sp"></div>${IS_TEACHER ? '<span class="chip t">🎓 מצב מורה</span>' : ''}<span class="chip" id="stars">⭐ 0</span></header>
+  document.body.innerHTML = `<header class="topbar"><div class="brand" id="logo"><span style="width:34px;height:34px;display:inline-block">${ART.mascot_happy ? `<img src="${ART.mascot_happy}" alt="" style="width:100%;height:100%">` : mascotSVG('happy')}</span><span>${CFG.TITLE}</span></div><div class="sp"></div>${IS_TEACHER ? '<span class="chip t">🎓 מצב מורה</span>' : ''}<span class="chip" id="stars">⭐ 0</span></header>
   <main class="page" id="view"></main>
   <nav class="nav" aria-label="ניווט ראשי">${[['home', '🏠', 'בית'], ['a', '📘', 'א׳ ללמוד'], ['b', '🧪', 'ב׳ אבחון'], ['c', '🚑', 'ג׳ מיון'], ['me', '👤', 'אני']].concat(IS_TEACHER ? [['t', '🎓', 'מורה']] : []).map(n => `<a href="#/${n[0]}" data-n="${n[0]}"><span class="ic">${n[1]}</span><span>${n[2]}</span></a>`).join('')}</nav>`;
   $('#logo').onclick = () => location.hash = '#/home';
@@ -28,11 +28,12 @@ function gamesOfPart(p) { return GAMES.filter(g => g.part === p); }
 function partProgress(p) { const g = gamesOfPart(p); const d = g.filter(x => Store.stars(x.id) > 0).length; return { d, n: g.length, pct: g.length ? Math.round(100 * d / g.length) : 0 }; }
 function tile(g) { return `<button class="tile" data-g="${g.id}">${starsHTML(Store.stars(g.id))}<span class="ic">${g.icon}</span><span class="t">${g.title}</span><span class="d">${g.desc}</span></button>`; }
 
+function heroBg(g) { return ART.hero_bg ? `background:linear-gradient(135deg,${g}),url(${ART.hero_bg}) center/cover` : ''; }
 function home() {
   const hasName = !!Store.d.name;
   const prog = Object.keys(PARTS).map(k => ({ k, ...partProgress(k) }));
   const next = GAMES.find(g => !Store.stars(g.id));
-  view().innerHTML = `<div class="hero">${mascot('wow')}<div><h1>${hasName ? 'היי ' + esc(Store.d.name) + '! 👋' : 'ברוכים הבאים למעבדת הדם'}</h1><p>לומדים על תאי הדם האדומים והאנמיות – דרך משחקים, חידות ותורנות מיון.</p></div></div>
+  view().innerHTML = `<div class="hero" style="${heroBg('rgba(150,30,50,.62),rgba(70,30,100,.5)')}">${mascot('wow')}<div><h1>${hasName ? 'היי ' + esc(Store.d.name) + '! 👋' : 'ברוכים הבאים למעבדת הדם'}</h1><p>לומדים על תאי הדם האדומים והאנמיות – דרך משחקים, חידות ותורנות מיון.</p></div></div>
     ${hasName ? '' : `<div class="card"><h3>איך קוראים לך?</h3><p class="muted small">אפשר גם כינוי. השם נשמר רק במכשיר שלך, ונשלח למורה רק אם תלחצו על "שליחת תוצאות".</p>
       <input type="text" id="nm" placeholder="שם או כינוי" maxlength="30" autocomplete="off"><div style="height:8px"></div><input type="text" id="cl" placeholder="כיתה (לא חובה)" maxlength="12" autocomplete="off">
       <button class="btn primary block" id="sv" style="margin-top:10px">נתחיל! 🚀</button></div>`}
@@ -47,7 +48,7 @@ function home() {
 
 function partPage(p) {
   const P = PARTS[p], gs = gamesOfPart(p);
-  let h = `<div class="hero" style="background:linear-gradient(135deg,${p === 'A' ? '#d23b4c,#8e1b2e' : p === 'B' ? '#0f9b95,#1a6fa0' : '#7a4fd6,#4b2f9c'})">${mascot(p === 'C' ? 'think' : 'happy')}<div><h1>חלק ${P.l}: ${P.t}</h1><p>${P.d}</p></div></div>`;
+  let h = `<div class="hero" style="${ART.hero_bg ? heroBg(p === 'A' ? 'rgba(160,30,55,.65),rgba(110,30,60,.5)' : p === 'B' ? 'rgba(15,110,115,.65),rgba(26,90,150,.5)' : 'rgba(110,70,200,.65),rgba(60,40,140,.5)') : 'background:linear-gradient(135deg,' + (p === 'A' ? '#d23b4c,#8e1b2e' : p === 'B' ? '#0f9b95,#1a6fa0' : '#7a4fd6,#4b2f9c') + ')'}">${mascot(p === 'C' ? 'think' : 'happy')}<div><h1>חלק ${P.l}: ${P.t}</h1><p>${P.d}</p></div></div>`;
   if (p === 'A') {
     h += `<div class="card soft small">📘 חלק א׳ מסכם את מה שנלמד בכיתה, בעזרת משחקים. אפשר לעבוד לפי הסדר או לדלג בין יחידות.</div>`;
     Object.keys(SECS).forEach(s => { const g = gs.filter(x => x.sec === s); h += `<div class="part"><h2 style="margin:0">${SECS[s][0]}</h2></div><p class="muted small" style="margin-top:0">${SECS[s][1]}</p><div class="grid">${g.map(tile).join('')}</div>`; });

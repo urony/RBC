@@ -19,7 +19,7 @@ const O = (t, ok, why) => ({ t, ok: !!ok, why: why || '' });
 
 const CASES = [
   {
-    id: 'c1', name: 'נועה', age: 16, sex: 'F', emoji: '👧', type: 'ida', dx: 'ida', diff: 1,
+    art: 'iron', id: 'c1', name: 'נועה', age: 16, sex: 'F', emoji: '👧', type: 'ida', dx: 'ida', diff: 1,
     fixed: { Hb: 8.1, MCV: 66, RET: .9, FER: 4, FE: 18, TRF: 455, RDW: 19.5, PLT: 410 },
     cc: 'עייפות כבר חודשים, הציונים יורדים, "קר לי כל הזמן".', quip: 'הגיעה עם אמא ועם כוס קרח שהיא כבר כמעט סיימה לכרסם.',
     vitals: { hr: 104, bp: '100/62', spo2: 99, temp: 36.7 },
@@ -31,7 +31,7 @@ const CASES = [
     teach: 'פריטין נמוך = מאגרי ברזל ריקים. מטפלים גם בגורם (כאן הדימום הווסתי). ויטמין C מגביר ספיגה; תה, קפה וחלב מעכבים.',
   },
   {
-    id: 'c2', name: 'רון', age: 58, sex: 'M', emoji: '👨', type: 'b12', dx: 'b12', diff: 2,
+    art: 'taxi', id: 'c2', name: 'רון', age: 58, sex: 'M', emoji: '👨', type: 'b12', dx: 'b12', diff: 2,
     fixed: { Hb: 9.4, MCV: 118, RET: .7, B12: 70, FOL: 11, WBC: 3.4, PLT: 128, LDH: 620, BILI: 1.3 },
     cc: 'נימול ועקצוץ ברגליים, והליכה לא יציבה.', quip: 'אשתו הביאה אותו: "הוא שוכח איפה החנה, ואתמול גם את השם שלי."',
     vitals: { hr: 88, bp: '132/80', spo2: 98, temp: 36.6 },
@@ -55,7 +55,7 @@ const CASES = [
     teach: 'חומצה פולית חיונית לכל אישה בגיל הפוריות ובהיריון. חוסרה בתחילת ההיריון עלול לגרום למומים בתעלה העצבית (למשל ספינה ביפידה).',
   },
   {
-    id: 'c4', name: 'אלון', age: 8, sex: 'M', emoji: '👦', type: 'g6pd', dx: 'g6pd', diff: 1,
+    art: 'fava', id: 'c4', name: 'אלון', age: 8, sex: 'M', emoji: '👦', type: 'g6pd', dx: 'g6pd', diff: 1,
     fixed: { Hb: 7.2, MCV: 98, RET: 12, BILI: 4.8, LDH: 1250, HAPT: 3, WBC: 11.5, CRP: 6 },
     cc: 'השתן כהה כמו תה, והעיניים צהובות.', quip: 'אתמול סבתא הכינה מרק פול "עם המון אהבה".',
     vitals: { hr: 124, bp: '98/60', spo2: 98, temp: 37.9 },
@@ -68,7 +68,7 @@ const CASES = [
     teach: 'המוליזה = רטיקולוציטוזיס, בילירובין לא ישיר ↑, LDH ↑, הפטוגלובין ↓. G6PD שכיח במוצא עיראקי/כורדי. קומבס שלילי מרחיק המוליזה אוטואימונית.',
   },
   {
-    id: 'c5', name: 'מרים', age: 34, sex: 'F', emoji: '👩', type: 'aiha', dx: 'aiha', diff: 2,
+    art: 'spleen', id: 'c5', name: 'מרים', age: 34, sex: 'F', emoji: '👩', type: 'aiha', dx: 'aiha', diff: 2,
     fixed: { Hb: 6.9, MCV: 102, RET: 14, BILI: 3.9, LDH: 980, HAPT: 4, CRP: 12, FER: 250 },
     cc: 'עייפות פתאומית, שתן כהה והעיניים נראות צהובות.', quip: '"התחלתי לנקות את הבית ופתאום כאילו עברתי מרתון."',
     vitals: { hr: 112, bp: '108/68', spo2: 98, temp: 37.8 },
@@ -92,7 +92,7 @@ const CASES = [
     teach: 'פריטין תקין/גבוה + טרנספרין נמוך + CRP/ESR גבוהים = אנמיה של מחלה כרונית ולא חוסר ברזל. הטיפול העיקרי הוא במחלה הבסיסית.',
   },
   {
-    id: 'c7', name: 'שרה', age: 71, sex: 'F', emoji: '👵', type: 'acd', dx: 'acd', diff: 3,
+    art: 'kidney', id: 'c7', name: 'שרה', age: 71, sex: 'F', emoji: '👵', type: 'acd', dx: 'acd', diff: 3,
     fixed: { Hb: 8.9, MCV: 90, RET: .6, FER: 210, FE: 52, TRF: 195, CRP: 12, ESR: 42, CREA: 3.4 },
     cc: 'נפיחות ברגליים, עייפות וקוצר נשימה במאמץ.', quip: '"כל פעם שאני עולה שלוש מדרגות הלב שלי מבקש הפסקת סיגריה – ואני אפילו לא מעשנת."',
     vitals: { hr: 96, bp: '150/90', spo2: 95, temp: 36.6 },
@@ -105,7 +105,7 @@ const CASES = [
     teach: 'באי-ספיקת כליות כרונית האנמיה מושפעת מירידה בייצור EPO ומדלקת. נורמוציטית, רטיקולוציטים נמוכים, EPO נמוך יחסית.',
   },
   {
-    id: 'c8', name: 'ליאור', age: 22, sex: 'M', emoji: '🧑', type: 'aplastic', dx: 'aplastic', diff: 1, urgent: true,
+    art: 'wbc', id: 'c8', name: 'ליאור', age: 22, sex: 'M', emoji: '🧑', type: 'aplastic', dx: 'aplastic', diff: 1, urgent: true,
     fixed: { Hb: 6.3, MCV: 96, RET: .2, WBC: 1.2, ANC: .3, PLT: 11, FER: 320 },
     cc: 'חום 38.9, חבורות בכל הגוף ודימום מהחניכיים.', quip: 'אומר שהוא פשוט "עבד קשה ולא ישן מספיק"… כבר שלושה שבועות.',
     vitals: { hr: 118, bp: '104/62', spo2: 97, temp: 38.9 },
@@ -118,7 +118,7 @@ const CASES = [
     teach: 'פנציטופניה + רטיקולוציטים נמוכים מאוד + בלי טחול מוגדל = חשד לאנמיה אפלסטית; אישור בביופסיית מח עצם. חום עם נויטרופניה = חירום.',
   },
   {
-    id: 'c9', name: 'דוד', age: 54, sex: 'M', emoji: '🧔', type: 'ida', dx: 'ida', diff: 2,
+    art: 'iron', id: 'c9', name: 'דוד', age: 54, sex: 'M', emoji: '🧔', type: 'ida', dx: 'ida', diff: 2,
     fixed: { Hb: 7.4, MCV: 69, RET: 1.8, FER: 6, FE: 12, TRF: 460, PLT: 480, RDW: 20 },
     cc: 'עייפות וקוצר נשימה בעליות. "הצואה שלי שחורה כמו זפת".', quip: '"אני לוקח איבופרופן כמו סוכריות – הברך שלי דורשת."',
     vitals: { hr: 94, bp: '126/78', spo2: 98, temp: 36.7 },
@@ -130,7 +130,7 @@ const CASES = [
     teach: 'חוסר ברזל אצל גבר (או אישה אחרי הפסקת וסת) – מחפשים מקור דימום עד שלא הוכח אחרת. NSAIDs יכולים לגרום לכיב ולדימום סמוי.',
   },
   {
-    id: 'c10', name: 'הדס', age: 40, sex: 'F', emoji: '👩‍🦰', type: 'ida', dx: 'ida', diff: 3,
+    art: 'iron', id: 'c10', name: 'הדס', age: 40, sex: 'F', emoji: '👩‍🦰', type: 'ida', dx: 'ida', diff: 3,
     fixed: { Hb: 9.0, MCV: 74, RET: 1.1, FER: 8, FE: 22, TRF: 430 },
     cc: '"אני לוקחת כדורי ברזל כבר חצי שנה, ושום דבר לא משתפר."', quip: '"אכלתי תרד שלוש פעמים ביום. אני מרגישה כמו פופאי – בלי השרירים."',
     vitals: { hr: 90, bp: '110/70', spo2: 99, temp: 36.8 },
@@ -184,7 +184,7 @@ function runShift(root, ctx, ids) {
     const c = list[idx], p = caseLabs(c), ordered = new Set(), st = { dx: null, cause: null, tx: null }; host.innerHTML = '';
     const v = c.vitals;
     const head = el(`<div><div class="row sp small muted"><span>מטופל ${idx + 1} מתוך ${list.length}</span><span id="spent">⏱️ ${spent}/${budget}</span></div><div class="bar" style="margin:8px 0"><i style="width:${100 * idx / list.length}%"></i></div></div>`);
-    const card = el(`<div class="card"><div class="patient-head"><div class="avatar">${c.emoji}</div><div><h3 style="margin:0">${c.name}, ${c.sex === 'F' ? 'בת' : 'בן'} ${c.age}</h3><div class="muted small">${c.quip}</div></div></div>
+    const card = el(`<div class="card"><div class="patient-head">${ART['patient_' + c.id] ? `<img class="avatar" src="${ART['patient_' + c.id]}" alt="${c.name}">` : `<div class="avatar">${c.emoji}</div>`}<div><h3 style="margin:0">${c.name}, ${c.sex === 'F' ? 'בת' : 'בן'} ${c.age}</h3><div class="muted small">${c.quip}</div></div></div>
       <p style="margin:10px 0 4px"><b>תלונה:</b> ${c.cc}</p>
       <div class="vitals">${vit('דופק', v.hr, v.hr > 100)}${vit('לחץ דם', v.bp, false)}${vit('סטורציה', v.spo2 + '%', v.spo2 < 94)}${vit('חום', v.temp, v.temp >= 38)}</div>
       ${IS_TEACHER ? `<div class="tnote"><b>מפתח:</b> אבחנה – ${DXOPT[c.dx]}${c.urgent ? ' · <b>חירום</b>' : ''} · בדיקות חיוניות: ${c.must.map(k => TESTS[k].n).join(', ')} · נקודת לימוד: ${c.teach}</div>` : ''}</div>`);
@@ -223,7 +223,7 @@ function runShift(root, ctx, ids) {
       const sm = el(`<div class="card" style="margin-top:14px"><h3>סיכום המטופל: ${pts}/100</h3>
         <div class="kpi"><div><b>${st.dx ? 40 : 0}/40</b><span>אבחנה</span></div><div><b>${st.cause ? 15 : 0}/15</b><span>סיבה</span></div><div><b>${st.tx ? 25 : 0}/25</b><span>טיפול</span></div><div><b>${eff}/20</b><span>יעילות בדיקות</span></div></div>
         ${extra.length ? `<p class="small">🧾 בדיקות מיותרות: ${extra.map(k => TESTS[k].n).join(', ')}</p>` : ''}${miss.length ? `<p class="small">⚠️ בדיקות חיוניות שלא הוזמנו: ${miss.map(k => TESTS[k].n).join(', ')}</p>` : ''}
-        <div class="explain">📌 ${c.teach}</div><button class="btn primary block" id="nx" style="margin-top:12px">${idx + 1 >= list.length ? 'לסיכום המשמרת 🏁' : 'המטופל הבא ←'}</button></div>`);
+        <div class="explain row" style="flex-wrap:nowrap">${c.art && ART[c.art] ? `<img src="${ART[c.art]}" alt="" style="width:84px;height:auto;flex:0 0 84px">` : ''}<span>📌 ${c.teach}</span></div><button class="btn primary block" id="nx" style="margin-top:12px">${idx + 1 >= list.length ? 'לסיכום המשמרת 🏁' : 'המטופל הבא ←'}</button></div>`);
       P.dx.appendChild(sm); sm.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       $('#nx', sm).onclick = () => { idx++; patient(); window.scrollTo(0, 0); };
     }

@@ -6,7 +6,7 @@ registerGame({
   id: 'a_absorb', part: 'A', sec: 'basics', icon: '🥗', title: 'ספיגה: מה עוזר ומה מפריע', desc: 'ברזל – מגבירים ומעכבים, ומסע B12 בגוף',
   teacherNote: 'שלב 1: מיון גורמים המשפיעים על ספיגת ברזל (לפי הספר). שלב 2: סידור מסלול ספיגת B12 עם הפקטור הפנימי.',
   mount(root, ctx) {
-    root.insertAdjacentHTML('afterbegin', say('ארוחה בריאה היא לא תמיד ארוחה יעילה. בואו נראה מה מעלה ומה מוריד את ספיגת הברזל!', 'wink'));
+    root.insertAdjacentHTML('afterbegin', say('ארוחה בריאה היא לא תמיד ארוחה יעילה. אני הברזל – בואו נראה מה מעלה ומה מוריד את הספיגה שלי!', 'wink', 'iron'));
     let s1 = 0;
     const items = [
       { e: '🍊', t: 'כוס מיץ תפוזים לצד הארוחה', b: 0, why: 'ויטמין C (בפירות הדר) משפר משמעותית את ספיגת הברזל, בעיקר ברזל מהצומח.' },
@@ -19,7 +19,7 @@ registerGame({
     ];
     sortGame(root, { items, buckets: ['מגביר ספיגה', 'מעכב ספיגה'], tag: 'iron_absorb', onDone: p => { s1 = p; root.innerHTML = ''; stage2(); } });
     function stage2() {
-      root.insertAdjacentHTML('afterbegin', say('כעת B12: ויטמין דרמטי עם תהליך ספיגה מסובך. בלי "מלווה" מהקיבה – הוא לא נכנס!', 'think') + fig('b12abs', 'ספיגת B12 (איור מהספר)'));
+      root.insertAdjacentHTML('afterbegin', say('אני B12, ובלי המונית של הפקטור הפנימי אני לא מגיע לשום מקום…', 'think', 'b12') + fig('b12abs', 'ספיגת B12 (איור מהספר)'));
       const steps = ['ויטמין B12 משתחרר מהמזון בעזרת חומצת הקיבה ואנזימים',
         'בקיבה הוא נקשר לפקטור הפנימי (Intrinsic Factor) שמיוצר בתאי הקיבה',
         'הקומפלקס עובר במעי הדק עד לחלקו האחרון',

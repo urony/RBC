@@ -102,7 +102,8 @@ function mascot(mood = 'happy', cls = '') {
   const a = ART['mascot_' + mood] || ART.mascot;
   return `<div class="mascot ${cls}">${a ? `<img src="${a}" alt="דמות" style="width:100%">` : mascotSVG(mood)}</div>`;
 }
-function say(text, mood = 'happy') { return `<div class="say">${mascot(mood)}<div class="bubble">${text}</div></div>`; }
+function charImg(name, w = 84) { const a = ART[name]; return a ? `<div class="mascot" style="flex:0 0 ${w}px"><img src="${a}" alt="" style="width:100%;height:auto"></div>` : ''; }
+function say(text, mood = 'happy', who) { return `<div class="say">${(who && charImg(who)) || mascot(mood)}<div class="bubble">${text}</div></div>`; }
 
 (function injectConfettiCss() {
   const s = document.createElement('style');
