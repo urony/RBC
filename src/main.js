@@ -16,6 +16,7 @@ function shell() {
   document.title = CFG.TITLE;
   document.body.innerHTML = `<header class="topbar"><div class="brand" id="logo"><span style="width:34px;height:34px;display:inline-block">${ART.mascot_happy ? `<img src="${ART.mascot_happy}" alt="" style="width:100%;height:100%">` : mascotSVG('happy')}</span><span>${CFG.TITLE}</span></div><div class="sp"></div>${IS_TEACHER ? '<span class="chip t">🎓 מצב מורה</span>' : ''}<span class="chip" id="stars">⭐ 0</span></header>
   <main class="page" id="view"></main>
+  <footer class="credit">פותח על ידי אורי העליון</footer>
   <nav class="nav" aria-label="ניווט ראשי">${[['home', '🏠', 'בית'], ['a', '📘', 'א׳ ללמוד'], ['b', '🧪', 'ב׳ אבחון'], ['c', '🚑', 'ג׳ מיון'], ['me', '👤', 'אני']].concat(IS_TEACHER ? [['t', '🎓', 'מורה']] : []).map(n => `<a href="#/${n[0]}" data-n="${n[0]}"><span class="ic">${n[1]}</span><span>${n[2]}</span></a>`).join('')}</nav>`;
   $('#logo').onclick = () => location.hash = '#/home';
 }
