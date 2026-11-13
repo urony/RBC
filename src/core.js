@@ -171,6 +171,12 @@ function mcq(parent, spec) {
   });
   return box;
 }
+/* סרגל קפיצה בין מטופלים: ממספר 1..n, ✓ = כבר נענה */
+function jumpBar(n, cur, answered, go) {
+  const bar = el(`<div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0" role="navigation" aria-label="מעבר בין מטופלים">${Array.from({ length: n }, (_, i) => `<button type="button" class="btn small${i === cur ? ' primary' : ''}" data-j="${i}" style="min-width:40px;padding:6px 10px" aria-label="מטופל ${i + 1}${answered[i] ? ', נענה' : ''}"${i === cur ? ' aria-current="true"' : ''}>${i + 1}${answered[i] ? ' ✓' : ''}</button>`).join('')}</div>`);
+  bar.onclick = e => { const b = e.target.closest('[data-j]'); if (b) go(+b.dataset.j); };
+  return bar;
+}
 function confettiSmall() { if (Math.random() < .25) confetti(6); }
 
 /* ריצת חידון – מספר שאלות ברצף */

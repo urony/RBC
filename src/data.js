@@ -1,9 +1,9 @@
 'use strict';
 /* ===== מדדי מעבדה, פרופילים, מחולל מטופלים ===== */
 const LAB = {
-  Hb: { n: 'המוגלובין (Hb)', u: 'g/dL', d: 1, r: { M: [14, 18], F: [12, 16] } },
-  RBC: { n: 'תאי דם אדומים (RBC)', u: 'M/µL', d: 2, r: { M: [4.5, 6.0], F: [4.0, 5.5] } },
-  HCT: { n: 'המטוקריט (HCT)', u: '%', d: 0, r: { M: [40, 54], F: [38, 47] } },
+  Hb: { n: 'המוגלובין (Hb)', u: 'g/dL', d: 1, r: { M: [13.5, 17.5], F: [12, 16] } },
+  RBC: { n: 'תאי דם אדומים (RBC)', u: 'M/µL', d: 2, r: { M: [4.5, 5.9], F: [4.1, 5.1] } },
+  HCT: { n: 'המטוקריט (HCT)', u: '%', d: 0, r: { M: [41, 50], F: [36, 46] } },
   MCV: { n: 'MCV', u: 'fL', d: 0, r: [80, 100] },
   MCH: { n: 'MCH', u: 'pg', d: 1, r: [27, 33] },
   MCHC: { n: 'MCHC', u: 'g/dL', d: 1, r: [32, 36] },
@@ -24,6 +24,8 @@ const LAB = {
   ESR: { n: 'שקיעת דם (ESR)', u: 'mm/h', d: 0, r: { M: [0, 20], F: [0, 30] } },
   CREA: { n: 'קריאטינין', u: 'mg/dL', d: 1, r: { M: [0.7, 1.3], F: [0.5, 1.1] } },
 };
+/* ערכים כפי שמופיעים בספר/בבחינה (שונים מעט מהמקובל במעבדות) */
+const BOOK_RANGE = { Hb: { M: [14, 18] }, HCT: { M: [40, 54], F: [38, 47] } };
 const LAB_HELP = {
   Hb: 'חלבון בתא הדם האדום שנושא חמצן. זו הבדיקה העיקרית לאבחון אנמיה: ערך מתחת לטווח פירושו אנמיה.',
   RBC: 'מספר תאי הדם האדומים בנפח דם נתון (מיליוני תאים במיקרוליטר).',
@@ -49,17 +51,17 @@ const LAB_HELP = {
   CREA: 'מדד לתפקוד הכליה. עולה בכשל כלייתי, שגורם לאנמיה כי הכליה לא מייצרת מספיק EPO. (מעבר לחומרי הלימוד)',
 };
 let _labNoteShown = false;
-const labNote = () => { if (_labNoteShown) return ''; _labNoteShown = true; return '<div class="small muted" style="margin:0 0 6px">מעבדות שונות משתמשות בטווחי ייחוס מעט שונים. הטווח מוצג בסוגריים. לחצו על ? להסבר על הבדיקה.</div>'; };
+const labNote = () => { if (_labNoteShown) return ''; _labNoteShown = true; return '<div class="small muted" style="margin:0 0 6px">הטווחים משתנים בין מעבדות, והמוצגים כאן מייצגים את המקובל בפועל. בבחינה משתמשים בערכי הספר: Hb גברים 14–18, HCT גברים 40–54 ונשים 38–47. הטווח מוצג בסוגריים. לחצו על ? להסבר על הבדיקה.</div>'; };
 const labQ = (k, cols) => `<button class="qm" type="button" aria-label="הסבר על הבדיקה" aria-expanded="false">?</button>`;
 const labHelpRow = (k, cols) => `<tr class="hrow" hidden><td colspan="${cols}">${LAB_HELP[k] || ''}</td></tr>`;
 function labRange(k, sex) { const r = LAB[k].r; return Array.isArray(r) ? r : r[sex]; }
 function labFlag(k, v, sex) { const [lo, hi] = labRange(k, sex); return v < lo ? 'L' : v > hi ? 'H' : ''; }
 function labFmt(k, v) { return Number(v).toFixed(LAB[k].d); }
-function labRows(keys, vals, sex, hl = []) {
+function labRows(keys, vals, sex, hl = [], coombs = null) {
   return labNote() + `<table class="lab"><thead><tr><th>בדיקה</th><th>תוצאה</th><th>טווח תקין</th></tr></thead><tbody>${keys.map(k => {
     if (vals[k] == null) return ''; const f = labFlag(k, vals[k], sex), [lo, hi] = labRange(k, sex);
     return `<tr class="${hl.includes(k) ? 'hl' : ''}"><td>${LAB[k].n} ${labQ(k)}</td><td class="v ${f}">${labFmt(k, vals[k])} <span class="muted small">${LAB[k].u}</span></td><td class="r">(${lo}–${hi})</td></tr>${labHelpRow(k, 3)}`;
-  }).join('')}</tbody></table>`;
+  }).join('')}${coombs ? `<tr class="hl"><td><b>🧫 בדיקת קומבס ישיר</b><br><span class="muted small">נוגדנים על תאי הדם האדומים</span></td><td class="v ${coombs === 'חיובי' ? 'H' : ''}" colspan="2" style="font-size:1.05em"><b>${coombs}</b></td></tr>` : ''}</tbody></table>`;
 }
 const PANEL = {
   cbc: ['Hb', 'RBC', 'HCT', 'MCV', 'MCH', 'MCHC', 'RDW', 'WBC', 'ANC', 'PLT'],

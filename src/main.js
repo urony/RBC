@@ -70,8 +70,9 @@ function partPage(p) {
   if (LOCK) bindName(() => partPage(p));
 }
 function refTable() {
+  const bk = (k, sx) => BOOK_RANGE[k] && BOOK_RANGE[k][sx] ? `<br><span class="small" style="color:var(--teal)">בבחינה: ${BOOK_RANGE[k][sx][0]}–${BOOK_RANGE[k][sx][1]}</span>` : '';
   const keys = ['Hb', 'RBC', 'HCT', 'MCV', 'MCH', 'MCHC', 'RDW', 'RET', 'WBC', 'PLT', 'FER', 'FE', 'TRF', 'B12', 'FOL', 'BILI', 'LDH', 'HAPT', 'CRP', 'ESR'];
-  return `<div class="small muted" style="margin-bottom:6px">מעבדות שונות משתמשות בטווחי ייחוס מעט שונים. לחצו על ? להסבר.</div><table class="lab"><thead><tr><th>בדיקה</th><th>נשים</th><th>גברים</th></tr></thead><tbody>${keys.map(k => { const f = labRange(k, 'F'), m = labRange(k, 'M'); return `<tr><td>${LAB[k].n} <span class="muted small">${LAB[k].u}</span> ${labQ(k)}</td><td class="r">(${f[0]}–${f[1]})</td><td class="r">(${m[0]}–${m[1]})</td></tr>${labHelpRow(k, 3)}`; }).join('')}</tbody></table>`;
+  return `<div class="small muted" style="margin-bottom:6px">הטווחים משתנים בין מעבדות, והמוצגים כאן מייצגים את המקובל בפועל. לחצו על ? להסבר.</div><table class="lab"><thead><tr><th>בדיקה</th><th>נשים</th><th>גברים</th></tr></thead><tbody>${keys.map(k => { const f = labRange(k, 'F'), m = labRange(k, 'M'); return `<tr><td>${LAB[k].n} <span class="muted small">${LAB[k].u}</span> ${labQ(k)}</td><td class="r">(${f[0]}–${f[1]})${bk(k, 'F')}</td><td class="r">(${m[0]}–${m[1]})${bk(k, 'M')}</td></tr>${labHelpRow(k, 3)}`; }).join('')}</tbody></table>`;
 }
 
 function mePage() {

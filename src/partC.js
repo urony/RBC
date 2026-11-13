@@ -179,14 +179,17 @@ Object.values(SHIFTS).forEach(S => registerGame({
 function runShift(root, ctx, ids) {
   const list = shuffle(ids.map(id => CASES.find(c => c.id === id)));
   let idx = 0; const results = [];
+  const doneN = () => results.filter(Boolean).length;
   const host = el('<div></div>'); root.appendChild(host);
   root.insertAdjacentHTML('afterbegin', say('ברוכים הבאים למיון! 🚑 לכל מטופל: קחו אנמנזה, בצעו בדיקה גופנית, עיינו בבדיקות הדם, ואז אבחנו וטפלו.', 'happy'));
   const vit = (k, v, bad) => `<div><b style="${bad ? 'color:var(--bad)' : ''}">${v}</b>${k}</div>`;
   function patient() {
     if (idx >= list.length) { summary(); return; }
+    const cur = idx;
     const c = list[idx], p = caseLabs(c), st = { dx: null, cause: null, tx: null }; host.innerHTML = '';
     const v = c.vitals;
-    const head = el(`<div><div class="row sp small muted"><span>מטופל ${idx + 1} מתוך ${list.length}</span></div><div class="bar" style="margin:8px 0"><i style="width:${100 * idx / list.length}%"></i></div></div>`);
+    const head = el(`<div><div class="row sp small muted"><span>מטופל ${idx + 1} מתוך ${list.length}</span></div><div class="bar" style="margin:8px 0"><i style="width:${100 * doneN() / list.length}%"></i></div></div>`);
+    head.appendChild(jumpBar(list.length, idx, list.map((_, k) => !!results[k]), j => { idx = j; patient(); window.scrollTo(0, 0); }));
     const card = el(`<div class="card"><div class="patient-head">${ART['patient_' + c.id] ? `<img class="avatar" src="${ART['patient_' + c.id]}" alt="${c.name}">` : `<div class="avatar">${c.emoji}</div>`}<div><h3 style="margin:0">${c.name}, ${c.sex === 'F' ? 'בת' : 'בן'} ${c.age}</h3><div class="muted small">${c.quip}</div></div></div>
       <p style="margin:10px 0 4px"><b>תלונה:</b> ${c.cc}</p>
       <div class="vitals">${vit('דופק', v.hr, v.hr > 100)}${vit('לחץ דם', v.bp, false)}${vit('סטורציה', v.spo2 + '%', v.spo2 < 94)}${vit('חום', v.temp, v.temp >= 38)}</div>
@@ -210,26 +213,27 @@ function runShift(root, ctx, ids) {
     const dxBtn = el('<button class="btn primary block" id="startdx">אני מוכן/ה לאבחן ←</button>'); P.dx.appendChild(dxBtn);
     dxBtn.onclick = () => {
       dxBtn.remove();
-      mcq(dxHost, { q: 'מהי האבחנה?', tag: CAT_TAG[c.dx === 'b12' || c.dx === 'folate' ? 'mega' : c.dx === 'g6pd' || c.dx === 'aiha' ? 'hemo' : c.dx], shuffle: false,
+      mcq(dxHost, { q: 'מהי האבחנה?', tag: CAT_TAG[c.dx === 'b12' || c.dx === 'folate' ? 'mega' : c.dx === 'g6pd' || c.dx === 'aiha' ? 'hemo' : c.dx],
         options: Object.keys(DXOPT).map(k => ({ t: DXSHORT[k], ok: k === c.dx, tag: CAT_TAG[k === 'b12' || k === 'folate' ? 'mega' : k === 'g6pd' || k === 'aiha' ? 'hemo' : k] })),
         onDone: ok => { st.dx = ok; const b2 = el('<div style="margin-top:16px"></div>'); dxHost.appendChild(b2); mcq(b2, { q: c.cause[0], tag: 'cause', options: c.cause[1], onDone: ok2 => { st.cause = ok2; const b3 = el('<div style="margin-top:16px"></div>'); dxHost.appendChild(b3); mcq(b3, { q: 'מה הטיפול המתאים?', tag: c.urgent ? 'urgent' : 'treatment', options: c.tx, onDone: ok3 => { st.tx = ok3; done(); } }); } }); } });
     };
     function done() {
       const pts = (st.dx ? 50 : 0) + (st.cause ? 20 : 0) + (st.tx ? 30 : 0);
-      results.push({ c, pts, dx: st.dx, cause: st.cause, tx: st.tx });
+      if (!results[cur]) results[cur] = { c, pts, dx: st.dx, cause: st.cause, tx: st.tx };
+      const left = list.map((_, k) => k).filter(k => !results[k]); const nxt = left.find(k => k > cur); const last = left.length === 0;
       const sm = el(`<div class="card" style="margin-top:14px"><h3>סיכום המטופל: ${pts}/100</h3>
         <div class="kpi"><div><b>${st.dx ? 50 : 0}/50</b><span>אבחנה</span></div><div><b>${st.cause ? 20 : 0}/20</b><span>סיבה</span></div><div><b>${st.tx ? 30 : 0}/30</b><span>טיפול</span></div></div>
-        <div class="explain row" style="flex-wrap:nowrap">${c.art && ART[c.art] ? `<img src="${ART[c.art]}" alt="" style="width:84px;height:auto;flex:0 0 84px">` : ''}<span>📌 ${c.teach}</span></div><button class="btn primary block" id="nx" style="margin-top:12px">${idx + 1 >= list.length ? 'לסיכום המשמרת 🏁' : 'המטופל הבא ←'}</button></div>`);
+        <div class="explain row" style="flex-wrap:nowrap">${c.art && ART[c.art] ? `<img src="${ART[c.art]}" alt="" style="width:84px;height:auto;flex:0 0 84px">` : ''}<span>📌 ${c.teach}</span></div><button class="btn primary block" id="nx" style="margin-top:12px">${last ? 'לסיכום המשמרת 🏁' : 'המטופל הבא ←'}</button></div>`);
       P.dx.appendChild(sm); sm.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      $('#nx', sm).onclick = () => { idx++; patient(); window.scrollTo(0, 0); };
+      $('#nx', sm).onclick = () => { idx = last ? list.length : (nxt != null ? nxt : left[0]); patient(); window.scrollTo(0, 0); };
     }
     tabs.addEventListener('click', e => { const b = e.target.closest('[data-t]'); if (!b) return; $$('button', tabs).forEach(x => x.classList.toggle('on', x === b)); Object.keys(P).forEach(k => P[k].classList.toggle('hide', k !== b.dataset.t)); });
   }
   function summary() {
-    const avg = Math.round(results.reduce((s, r) => s + r.pts, 0) / results.length);
+    const rs = results.filter(Boolean); const avg = Math.round(rs.reduce((s, r) => s + r.pts, 0) / rs.length);
     const rank = avg >= 90 ? ['🏅 המטולוג/ית על', 'כמעט שלא טעית. את/ה מוכנ/ה לבגרות – ולמיון!'] : avg >= 75 ? ['🥇 רופא/ה מצטיינ/ת', 'עבודה מקצועית. עוד קצת דיוק בבדיקות ותהיו בפסגה.'] : avg >= 55 ? ['🩺 מתמחה מבטיח/ה', 'בסיס טוב. כדאי לחזור על דפוסי המעבדה.'] : ['🎓 סטודנט/ית שנה א׳', 'כולם התחילו כאן. נסו שוב – בכל משמרת לומדים משהו חדש.'];
-    const extra = `<div class="card"><h3>${rank[0]}</h3><p>${rank[1]}</p><div class="kpi"><div><b>${avg}</b><span>ממוצע למטופל</span></div><div><b>${results.filter(r => r.dx).length}/${results.length}</b><span>אבחנות נכונות</span></div></div>
-      <table class="lab"><thead><tr><th>מטופל</th><th>אבחנה</th><th>ניקוד</th></tr></thead><tbody>${results.map(r => `<tr><td>${r.c.emoji} ${r.c.name}</td><td>${r.dx ? '✅' : '❌'} ${DXOPT[r.c.dx]}</td><td class="v">${r.pts}</td></tr>`).join('')}</tbody></table>
+    const extra = `<div class="card"><h3>${rank[0]}</h3><p>${rank[1]}</p><div class="kpi"><div><b>${avg}</b><span>ממוצע למטופל</span></div><div><b>${rs.filter(r => r.dx).length}/${rs.length}</b><span>אבחנות נכונות</span></div></div>
+      <table class="lab"><thead><tr><th>מטופל</th><th>אבחנה</th><th>ניקוד</th></tr></thead><tbody>${rs.map(r => `<tr><td>${r.c.emoji} ${r.c.name}</td><td>${r.dx ? '✅' : '❌'} ${DXOPT[r.c.dx]}</td><td class="v">${r.pts}</td></tr>`).join('')}</tbody></table>
       <button class="btn block" id="sharebtn" style="margin-top:12px">📤 שליחת התוצאות למורה</button></div>`;
     ctx.finish(avg, extra);
     const sb = $('#sharebtn', root); if (sb) sb.onclick = shareResultsModal;
