@@ -261,3 +261,44 @@ svg.chart{direction:ltr}
 .qm{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-inline-start:4px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--bg2);color:var(--primary);font:700 .75rem/1 inherit;cursor:pointer;vertical-align:middle}
 .qm[aria-expanded="true"]{background:var(--primary);color:#fff}
 .lab tr.hrow td{background:var(--bg2);font-size:.85rem;color:var(--ink);direction:rtl;text-align:start;font-weight:400}
+
+/* ===== סבב 5: המומחה, טופס מעבדה, תעודה, מסע ===== */
+.expert{display:flex;align-items:center;gap:12px;flex-wrap:nowrap}
+.expert img{width:96px;height:96px;object-fit:contain;flex:0 0 96px}
+.labform{border-inline-start:6px solid var(--teal)}
+.lf-head{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding-bottom:8px;border-bottom:2px dashed var(--line)}
+.lf-head img{width:34px;height:auto;flex:0 0 34px}
+.lab tr.abnH td{background:var(--bad-soft)} .lab tr.abnL td{background:var(--blue-soft,#e3eefc)}
+.lab tr.abnH td.v,.lab tr.abnL td.v{font-size:1.08em}
+:root[data-theme="dark"] .lab tr.abnL td{background:#1d2a3d}
+.journey .jmap{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:6px 0}
+.jn{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;width:92px;padding:10px 4px;border:2px dashed var(--line);border-radius:16px;background:var(--surface);color:var(--text);font:inherit;cursor:pointer}
+.jn .jic{font-size:1.7rem;line-height:1} .jn .jt{font-size:.74rem;text-align:center;font-weight:600;line-height:1.2}
+.jn.done{border-style:solid;border-color:var(--good);background:var(--good-soft)}
+.jn.now{border-style:solid;border-color:var(--primary);background:var(--primary-soft);box-shadow:0 0 0 3px var(--primary-soft);animation:jpulse 1.8s ease-in-out infinite}
+.jdemi{position:absolute;top:-22px;inset-inline-end:-6px;width:38px;height:38px;animation:jbob 1.6s ease-in-out infinite}
+@keyframes jpulse{50%{transform:scale(1.04)}} @keyframes jbob{50%{transform:translateY(-4px)}}
+@media (prefers-reduced-motion:reduce){.jn.now,.jdemi{animation:none}}
+.cert{background:linear-gradient(135deg,#fff8ee,#ffe9e4);border:10px double #d4a017;border-radius:12px;padding:6px;color:#3a2430;text-align:center}
+.cert-in{border:2px solid #d23b4c;border-radius:8px;padding:18px 12px}
+.cert-badge{width:84px;height:auto}.cert-star{font-size:3rem}
+.cert-h{font-size:1.9rem;font-weight:800;color:#d23b4c;margin:4px 0}
+.cert-s{color:#6b5560;font-size:.95rem;margin:4px 0}
+.cert-name{font-size:2.1rem;font-weight:800;color:#1b9a68;margin:8px 0}
+.cert-rank{font-size:1.3rem;font-weight:800;color:#b8860b;margin:8px 0}
+.cert-foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px;color:#6b5560;font-size:.9rem}
+.cert-exp{width:64px;height:64px;object-fit:contain}
+#certprint{display:none}
+@media print{
+  body.cert-printing > *:not(#certprint){display:none !important}
+  body.cert-printing #certprint{display:block !important}
+  body.cert-printing #certprint .cert{font-size:130%;margin:0;border-width:14px}
+  body.cert-printing #certprint .cert-in{padding:40px 20px}
+  body.cert-printing #certprint .cert-badge{width:140px}
+  body.cert-printing #certprint .cert-h{font-size:3rem} body.cert-printing #certprint .cert-name{font-size:3.2rem}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+.flow{position:relative;height:30px;overflow:hidden;margin:6px 0 10px;border-radius:15px;background:linear-gradient(90deg,var(--bad-soft),transparent 60%,var(--bad-soft))}
+.flow i{position:absolute;top:5px;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#f6a1ad 0 22%,#d23b4c 24%);box-shadow:inset 0 0 0 2px #b52c3f;animation:flowx 7s linear infinite}
+@keyframes flowx{from{inset-inline-start:-30px}to{inset-inline-start:100%}}
+@media (prefers-reduced-motion:reduce){.flow i{animation:none;inset-inline-start:40%}}

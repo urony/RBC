@@ -18,7 +18,7 @@ function folderToMap(dir) {
   return out;
 }
 
-const order = ['core', 'widgets', 'cells', 'data', 'gamesA1', 'gamesA2', 'gamesA3', 'partB', 'partC', 'teacher', 'main'];
+const order = ['core', 'extras', 'widgets', 'cells', 'data', 'gamesA1', 'gamesA2', 'gamesA3', 'gamesA4', 'partB', 'partC', 'teacher', 'main'];
 const js = order.map(n => `/* ---- ${n}.js ---- */\n` + read(`src/${n}.js`)).join('\n');
 const css = read('src/styles.css');
 const imgAll = folderToMap('assets'), artAll = folderToMap('art');
@@ -50,15 +50,15 @@ fs.writeFileSync(path.join(root, 'dist/index.html'), full);
 console.log('built dist/index.html', Math.round(full.length / 1024) + ' KB', '| images:', Object.keys(imgAll).length, '| art:', Object.keys(artAll).length);
 
 /* ===== קבצים נפרדים: dist/parts/part-X.html ו-game-<id>.html (עם תמונות רק של החלק) ===== */
-const shared = ['core', 'widgets', 'cells', 'data', 'main', 'teacher'].map(n => read(`src/${n}.js`)).join('\n').replace(/const FIGX = \{[\s\S]*?\n\};/, '');
-const partFiles = { a: ['gamesA1', 'gamesA2', 'gamesA3'], b: ['partB'], c: ['partC'] };
+const shared = ['core', 'extras', 'widgets', 'cells', 'data', 'main', 'teacher'].map(n => read(`src/${n}.js`)).join('\n').replace(/const FIGX = \{[\s\S]*?\n\};/, '');
+const partFiles = { a: ['gamesA1', 'gamesA2', 'gamesA3', 'gamesA4'], b: ['partB'], c: ['partC'] };
 const usedBy = p => shared + '\n' + partFiles[p].map(n => read(`src/${n}.js`)).join('\n');
 function pick(map, p, extra) {
   const txt = usedBy(p), out = {};
   for (const k of Object.keys(map)) if (txt.includes(`'${k}'`) || txt.includes(`"${k}"`) || extra(k)) out[k] = map[k];
   return out;
 }
-const artExtra = p => k => /^(mascot_|hero_bg)/.test(k) || (p === 'c' && /^patient_/.test(k));
+const artExtra = p => k => /^(mascot_|hero_bg|expert_|badge_)/.test(k) || (p === 'c' && /^(patient_|exam_)/.test(k)) || (p === 'b' && /^tube_/.test(k)) || (p === 'a' && /^guide_/.test(k));
 const ids = { a: [], b: [], c: [] };
 for (const p of ['a', 'b', 'c']) for (const m of partFiles[p].map(n => read(`src/${n}.js`)).join('\n').matchAll(new RegExp(`id: '(${p}_[a-z0-9]+)'`, 'g'))) if (!ids[p].includes(m[1])) ids[p].push(m[1]);
 const pdir = path.join(root, 'dist/parts'); fs.rmSync(pdir, { recursive: true, force: true }); fs.mkdirSync(pdir, { recursive: true });
@@ -75,6 +75,7 @@ const tdir = path.join(root, 'dist/teacher-parts'); fs.rmSync(tdir, { recursive:
 let tn = 0;
 for (const p of ['a', 'b', 'c']) {
   const im = pick(imgAll, p, () => false), ar = pick(artAll, p, artExtra(p));
+  fs.writeFileSync(path.join(tdir, `teacher-part-${p.toUpperCase()}.html`), makeHtml(im, ar, p, true)); tn++;
   for (const i of ids[p]) { fs.writeFileSync(path.join(tdir, `teacher-game-${i}.html`), makeHtml(im, ar, i, true)); tn++; }
 }
 console.log('built dist/teacher.html +', tn, 'teacher game files');

@@ -60,7 +60,7 @@ function labFmt(k, v) { return Number(v).toFixed(LAB[k].d); }
 function labRows(keys, vals, sex, hl = [], coombs = null) {
   return labNote() + `<table class="lab"><thead><tr><th>בדיקה</th><th>תוצאה</th><th>טווח תקין</th></tr></thead><tbody>${keys.map(k => {
     if (vals[k] == null) return ''; const f = labFlag(k, vals[k], sex), [lo, hi] = labRange(k, sex);
-    return `<tr class="${hl.includes(k) ? 'hl' : ''}"><td>${LAB[k].n} ${labQ(k)}</td><td class="v ${f}">${labFmt(k, vals[k])} <span class="muted small">${LAB[k].u}</span></td><td class="r">(${lo}–${hi})</td></tr>${labHelpRow(k, 3)}`;
+    return `<tr class="${hl.includes(k) ? 'hl' : ''} ${f ? 'abn' + f : ''}"><td>${LAB[k].n} ${labQ(k)}</td><td class="v ${f}">${labFmt(k, vals[k])} <span class="muted small">${LAB[k].u}</span></td><td class="r">(${lo}–${hi})</td></tr>${labHelpRow(k, 3)}`;
   }).join('')}${coombs ? `<tr class="hl"><td><b>🧫 בדיקת קומבס ישיר</b><br><span class="muted small">נוגדנים על תאי הדם האדומים</span></td><td class="v ${coombs === 'חיובי' ? 'H' : ''}" colspan="2" style="font-size:1.05em"><b>${coombs}</b></td></tr>` : ''}</tbody></table>`;
 }
 const PANEL = {

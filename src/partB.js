@@ -14,7 +14,12 @@ function makePatient(type, edge) {
 }
 function patientLine(p) { return `${p.sex === 'F' ? 'אישה' : 'גבר'} בת/בן ${p.age} · תלונה: עייפות וחולשה`.replace('בת/בן', p.sex === 'F' ? 'בת' : 'בן'); }
 function resetLabNote() { _labNoteShown = false; }
-function panelCard(p, keys, title, extra = '', hl = []) { return `<div class="card flat" style="padding:12px"><h3 style="margin-bottom:8px">${title}</h3>${labRows(keys, p.vals, p.sex, hl, keys === PANEL.hemo ? p.coombs : null)}${extra}</div>`; }
+const TUBE_OF = k => (k === PANEL.cbc || k === PANEL.retic) ? 'tube_purple' : (k === PANEL.infl || k === PANEL.kidney) ? 'tube_green' : 'tube_gold';
+const TUBE_NAME = { tube_purple: 'צינורית סגולה', tube_gold: 'צינורית צהובה', tube_green: 'צינורית ירוקה' };
+function panelCard(p, keys, title, extra = '', hl = []) {
+  const tb = TUBE_OF(keys); p.sid = p.sid || (1000 + Math.floor(Math.random() * 9000));
+  return `<div class="card flat labform"><div class="lf-head">${ART[tb] ? `<img src="${ART[tb]}" alt="">` : ''}<div><h3 style="margin:0">${title}</h3><div class="small muted">🏥 מעבדה מרכזית · ${TUBE_NAME[tb]} · דגימה #${p.sid}</div></div></div>${labRows(keys, p.vals, p.sex, hl, keys === PANEL.hemo ? p.coombs : null)}${extra}</div>`;
+}
 function smearCard(p) { return `<div class="card flat" style="padding:12px;margin-top:8px"><h3>משטח דם <span class="pill">איור סכמטי</span></h3><div class="smear">${smearSVG(p.smear, Math.floor(Math.random() * 9999))}</div><p style="margin:8px 0 2px"><b>מה רואים:</b> ${SMEAR_DESC[p.smear]}</p><p class="small muted" style="margin:0">${SMEAR_WHY[p.smear]}</p></div>`; }
 
 function feedbackDx(p, chosenCat, withSmear) {
@@ -31,7 +36,7 @@ function runLabRounds(root, ctx, mode, types) {
   const sumScore = () => scores.reduce((a, b) => a + (b || 0), 0);
   const host = el('<div></div>'); root.appendChild(host);
   function patientRound() {
-    if (i >= types.length) { ctx.finish(Math.round(100 * sumScore() / types.length), ''); return; }
+    if (i >= types.length) { const per = scores.filter(x => x != null && x >= .999).length, rk = diagRank(per, types.length); ctx.rank = rk; ctx.finish(Math.round(100 * sumScore() / types.length), rankCard(rk, per, types.length)); return; }
     const type = types[i], p = pats[i] || (pats[i] = makePatient(type, edge)); host.innerHTML = '';
     const answeredN = scores.filter(x => x != null).length;
     const head = el(`<div><div class="row sp small muted"><span>מטופל ${i + 1} מתוך ${types.length}</span><span>⭐ ${Math.round(sumScore() * 10) / 10}</span></div><div class="bar" style="margin:8px 0"><i style="width:${100 * answeredN / types.length}%"></i></div></div>`);

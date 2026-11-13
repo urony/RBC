@@ -29,8 +29,8 @@ function teacherPage(root) {
     <div class="card"><h2>📦 מה שולחים</h2>
       <p class="small">לתלמידים שולחים את <b>קובץ התלמיד</b> (בלי תשובות). למורים שולחים את <b>קובץ המורה</b> (כמו הדף הזה). כל קובץ הוא עצמאי, ואפשר לשלוח גם משחק בודד.</p>
       <ul class="small" style="padding-inline-start:20px;margin:6px 0">
-        <li>קובץ תלמיד, הכול: <span class="ltr">index.html</span> · חלק שלם: <span class="ltr">parts/part-A.html</span> (או B, C) · משחק בודד: <span class="ltr">parts/game-&lt;מזהה&gt;.html</span></li>
-        <li>קובץ מורה, הכול: <span class="ltr">teacher.html</span> · משחק בודד עם תשובות: <span class="ltr">teacher-parts/teacher-game-&lt;מזהה&gt;.html</span></li></ul>
+        <li><b>תלמיד:</b> הכול: <span class="ltr">index.html</span> · חלק שלם: <span class="ltr">parts/part-A.html</span> (או B, C) · משחק בודד: <span class="ltr">parts/game-&lt;מזהה&gt;.html</span></li>
+        <li><b>מורה (עם תשובות):</b> הכול: <span class="ltr">teacher.html</span> · חלק שלם: <span class="ltr">teacher-parts/teacher-part-A.html</span> (או B, C) · משחק בודד: <span class="ltr">teacher-parts/teacher-game-&lt;מזהה&gt;.html</span></li></ul>
       <details><summary><b>מזהי המשחקים</b></summary>${GAMES.map(g => `<p class="small" style="margin:8px 0 2px">${g.icon} ${g.title}: <span class="ltr"><b>${g.id}</b></span></p><div class="row" style="gap:6px"><input type="text" readonly value="parts/game-${g.id}.html" style="direction:ltr;flex:1"><button class="btn sm" data-cp="parts/game-${g.id}.html">העתקה</button></div>`).join('')}</details>
       <p class="small muted" style="margin-top:8px">מיקום הקבצים בתיקייה: <span class="ltr">${esc(base)}</span>. באנדרואיד קובץ HTML שנשלח בוואטסאפ נפתח היטב; באייפון עדיף קישור (אחרי פרסום). אחרי כל עדכון צריך לשלוח את הקובץ מחדש.</p></div>
     <div class="card" id="results"><h2>📥 איסוף תוצאות תלמידים</h2>
@@ -99,7 +99,9 @@ function teacherGameView(g, body, mkCtx) {
     const host = el('<div></div>'); body.appendChild(host);
     g.mount(el('<div></div>'), { ...mkCtx(g, host), tview: v => { if (g.id === 'a_epo') host.innerHTML = teacherEpoView(v); else teacherBankView(host, v); } });
   }
-  const d = collectKey([g])[0];
+  const dyn = g.id === 'a_review' || g.id === 'a_exam';
+  if (dyn) special = '<div class="card soft small">משחק שנבנה מהשאלות של שאר המשחקים בחלק א׳. אפשר להפעיל אותו ולנסות. התשובות הנכונות של כל השאלות מופיעות במפתח של המשחקים האחרים.</div>';
+  const d = dyn ? null : collectKey([g])[0];
   const learned = g.learned && g.learned.length ? `<div class="card learned"><h3>📚 מה למדנו (מה שהתלמיד רואה בסיום)</h3><ul>${g.learned.map(x => `<li>${x}</li>`).join('')}</ul></div>` : '';
   const key = d ? gameKeyBlock(d, null, true) : '';
   const hasKey = d && (d.q.length || d.o.length || d.b.length || d.m.length);
@@ -147,7 +149,7 @@ function teacherShiftView(g, body) {
       <p style="margin:10px 0 4px"><b>תלונה:</b> ${c.cc}</p><p class="small muted">דופק ${v.hr} · לחץ דם ${v.bp} · סטורציה ${v.spo2}% · חום ${v.temp}</p>
       <div class="explain good"><b>האבחנה:</b> ${DXOPT[c.dx]}${c.urgent ? ' · <b>🚨 חירום</b>' : ''}<div class="small">📌 ${c.teach}</div></div></div>
       <div class="card"><h3>💬 אנמנזה</h3>${c.hist.map(h => `<div class="qa"><span class="muted small">${h[0]}</span><br>${h[1]}</div>`).join('')}</div>
-      <div class="card"><h3>🩺 בדיקה גופנית</h3><ul style="padding-inline-start:20px;margin:0">${c.exam.map(x => `<li style="margin:6px 0">${x}</li>`).join('')}</ul></div>
+      <div class="card"><h3>🩺 בדיקה גופנית</h3>${ART['exam_' + c.id] ? `<img src="${ART['exam_' + c.id]}" alt="" style="width:100%;border-radius:14px"><p class="small muted">${EXAMCAP[c.id] || ''}</p>` : ''}<ul style="padding-inline-start:20px;margin:0">${c.exam.map(x => `<li style="margin:6px 0">${x}</li>`).join('')}</ul></div>
       <div class="card"><h3>🧪 בדיקות דם</h3><p class="small muted">בדיקות חיוניות מסומנות ב-⭐:</p>${shown.map(k => `<div class="slip"><b>${TESTS[k].ic} ${TESTS[k].n}${c.must.includes(k) ? ' ⭐' : ''}</b>${testHTML(c, p, k)}</div>`).join('')}</div>
       <div class="card"><h3>✅ אבחנה, סיבה וטיפול</h3>${optsKey('מהי האבחנה?', Object.keys(DXOPT).map(k => ({ t: DXSHORT[k], ok: k === c.dx })))}${optsKey(c.cause[0], c.cause[1])}${optsKey('מה הטיפול המתאים?', c.tx)}</div>`);
   }
@@ -189,7 +191,7 @@ function collectKey(list) {
   window.binGame = (r, o) => { cur.b.push(o); go(() => o.onDone && o.onDone(100)); };
   window.sortGame = (r, o) => { cur.b.push(o); go(() => o.onDone && o.onDone(100)); };
   window.matchGame = (r, o) => { cur.m.push(o.pairs); go(() => o.onDone && o.onDone(100)); };
-  (list || GAMES.filter(g => g.part === 'A')).forEach(g => {
+  (list || GAMES.filter(g => g.part === 'A' && g.id !== 'a_review' && g.id !== 'a_exam')).forEach(g => {
     cur = { g, q: [], o: [], b: [], m: [] };
     const root = dummy();
     go(() => g.mount(root, { game: g, root, teacher: true, finish() { } }));

@@ -11,7 +11,9 @@ const IS_TEACHER = (typeof TEACHER_BUILD !== 'undefined');
 const BAKED = (typeof BAKED_ONLY !== 'undefined') ? BAKED_ONLY : '';   // קובץ נפרד: נעול לחלק/משחק כבר בבנייה
 // נעילה לחלק/משחק מסוים: ?only=a  |  ?only=a,b  |  ?only=b_l1 (בקובץ תלמיד בלבד)
 const ONLY = IS_TEACHER ? [] : (QS.get('only') || BAKED).toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
-const TBAKED = IS_TEACHER ? BAKED : '';   // קובץ מורה למשחק בודד
+const TPART = IS_TEACHER && /^[abc]$/.test(BAKED);   // קובץ מורה לחלק שלם
+const TGAME = IS_TEACHER && !!BAKED && !TPART;       // קובץ מורה למשחק בודד
+const TLOCK = TPART || TGAME;
 if (IS_TEACHER) CFG.STORE_KEY = 'hemolab_teacher_play';   // משחק של המורה לא מתערבב עם נתוני תלמיד
 const LOCK = ONLY.length > 0;
 const IMG = (typeof IMG_DATA !== 'undefined') ? IMG_DATA : {};
@@ -166,6 +168,7 @@ function mcq(parent, spec) {
     const right = opts.find(x => x.ok);
     const why = o.ok ? (o.why || '') : `${o.why ? o.why + '<br>' : ''}<b>התשובה הנכונה:</b> ${right.t}${right.why ? ' — ' + right.why : ''}`;
     $('.fb', box).innerHTML = `<div class="explain ${o.ok ? 'good' : 'bad'}">${o.ok ? '✅ נכון! ' : '🤔 כמעט. '}${why}</div>`;
+    if (typeof Snd !== 'undefined') Snd.play(o.ok ? 'ok' : 'no');
     if (o.ok) confettiSmall();
     spec.onDone && spec.onDone(!!o.ok, o);
   });
@@ -213,12 +216,13 @@ function makeCtx(game, root) {
       const rec = Store.record(game.id, pct);
       const st = Store.stars(game.id);
       const msg = pct >= 90 ? ['מושלם! אתם מדהימים 🎉', 'wow'] : pct >= 70 ? ['כל הכבוד – ממש מצוין!', 'happy'] : pct >= 40 ? ['יפה! עוד סיבוב ותהיו שם.', 'wink'] : ['לא נורא – טעויות הן הדרך ללמוד. נסו שוב!', 'think'];
-      if (pct >= 70) confetti();
+      if (pct >= 70) { confetti(); Snd.play('win'); } else Snd.play('no');
       root.innerHTML = `<div class="card victory">${mascot(msg[1], 'hero-m')}<h2>${pct}%</h2><div style="font-size:1.8rem;color:var(--gold)">${'★'.repeat(st)}${'☆'.repeat(3 - st)}</div><p>${msg[0]}</p><div class="muted small">שיא אישי: ${rec.best}% · ניסיונות: ${rec.attempts}</div></div>${extra}
+      ${IS_TEACHER ? '' : expertCard(pct)}${!IS_TEACHER && pct >= 70 ? '<button class="btn block" data-act="cert" style="margin-top:8px">🎓 תעודת סיום</button>' : ''}
       ${game.learned && game.learned.length ? `<div class="card learned"><h3>📚 מה למדנו</h3><ul>${game.learned.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
       <div class="row" style="margin-top:6px"><button class="btn primary grow" data-act="again">🔁 שוב</button><button class="btn grow" data-act="back">חזרה לרשימה</button></div>`;
       $('.hero-m', root) && ($('.hero-m', root).style.cssText = 'width:110px;margin:0 auto 8px');
-      $$('[data-act]', root).forEach(t => t.onclick = () => { if (t.dataset.act === 'again') { root.innerHTML = ''; game.mount(root, makeCtx(game, root)); } else location.hash = '#/' + game.part.toLowerCase(); });
+      const self = this; $$('[data-act]', root).forEach(t => t.onclick = () => { if (t.dataset.act === 'cert') { certModal(game, pct, self.rank || null); return; } if (t.dataset.act === 'again') { root.innerHTML = ''; game.mount(root, makeCtx(game, root)); } else location.hash = '#/' + game.part.toLowerCase(); });
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
   };
@@ -230,8 +234,13 @@ function mountGame(id, root) {
   const body = el(`<div id="game-body"></div>`);
   root.append(hdr, body);
   hdr.querySelector('[data-back]').onclick = () => location.hash = '#/' + g.part.toLowerCase();
-  if (TBAKED) hdr.querySelector('[data-back]').remove();
+  if (TGAME) hdr.querySelector('[data-back]').remove();
   if (IS_TEACHER && g.teacherNote) body.appendChild(el(`<div class="tnote"><b>הערה למורה:</b> ${g.teacherNote}</div>`));
   if (IS_TEACHER) { teacherGameView(g, body, makeCtx); return; }
-  g.mount(body, makeCtx(g, body));
+  if (!IS_TEACHER && g.id === 'a_o2') hdr.insertAdjacentHTML('beforeend', flowStrip());
+  const start = comp => { body.innerHTML = ''; const ctx = makeCtx(g, body); if (comp) attachComp(ctx, g, hdr); g.mount(body, ctx); const gs = guideSay(g.id); if (gs) body.insertAdjacentHTML('afterbegin', gs); };
+  if (g.part === 'B' || g.part === 'C') {
+    const ch = el(`<div class="card center"><h3 style="margin-top:0">איך תרצו לשחק?</h3><div class="row"><button class="btn primary grow" data-m="0">▶ משחק רגיל</button><button class="btn grow" data-m="1">⏱️ מצב תחרות</button></div><p class="small muted" style="margin:8px 0 0">בתחרות יש טיימר, בונוס מהירות ודירוג במכשיר. הניקוד הרגיל נשמר כרגיל.</p></div>`);
+    body.appendChild(ch); ch.onclick = e => { const b = e.target.closest('[data-m]'); if (b) start(b.dataset.m === '1'); };
+  } else start(false);
 }

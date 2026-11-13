@@ -165,18 +165,18 @@ function testHTML(c, p, k) {
 }
 
 const SHIFTS = {
-  s1: { id: 'c_s1', icon: '🌆', title: 'משמרת ערב: חמישה מטופלים', desc: 'מקרים קלאסיים: חוסר ברזל, B12, המוליזה, אוטואימונית ואפלסטית.', ids: ['c1', 'c2', 'c4', 'c5', 'c8'] },
-  s2: { id: 'c_s2', icon: '🌙', title: 'משמרת לילה: מקרים מאתגרים', desc: 'פולית בהיריון, מחלה כרונית, דימום סמוי וספיגה לקויה.', ids: ['c3', 'c6', 'c7', 'c9', 'c10'] },
-  s3: { id: 'c_s3', icon: '🏆', title: 'מרתון: כל עשרת המטופלים', desc: 'משמרת ארוכה מהכול, בסדר אקראי. לבעלי כושר!', ids: CASES.map(c => c.id) },
+  s1: { id: 'c_s1', icon: '🌆', title: 'משמרת ערב: חמישה מטופלים', desc: 'חמישה מטופלים: מקרים קלאסיים.', t0: '20:30', ids: ['c1', 'c2', 'c4', 'c5', 'c8'] },
+  s2: { id: 'c_s2', icon: '🌙', title: 'משמרת לילה: מקרים מאתגרים', desc: 'חמישה מטופלים: מקרים מאתגרים.', t0: '01:10', ids: ['c3', 'c6', 'c7', 'c9', 'c10'] },
+  s3: { id: 'c_s3', icon: '🏆', title: 'מרתון: כל עשרת המטופלים', desc: 'כל עשרת המטופלים בסדר אקראי. משמרת ארוכה, לבעלי כושר!', t0: '08:00', ids: CASES.map(c => c.id) },
 };
 Object.values(SHIFTS).forEach(S => registerGame({
   id: S.id, part: 'C', icon: S.icon, title: S.title, desc: S.desc,
   learned: ['תמונה מלאה מורכבת מאנמנזה, בדיקה גופנית ובדיקות דם יחד, ולא ממדד אחד.', 'הסיבה לאנמיה חשובה כמו האבחנה: הטיפול מכוון לגורם (דימום, ספיגה, תרופות, דלקת).', 'חום עם נויטרופניה או פנציטופניה הוא חירום רפואי.', 'בטיפול בחוסר ברזל ממשיכים חודשים אחרי נורמליזציה של ההמוגלובין, כדי למלא את מאגרי הפריטין.'],
   teacherNote: 'כל מטופל כולל אנמנזה, בדיקה גופנית, תוצאות בדיקות דם, אבחנה, סיבה וטיפול. ציון מטופל: אבחנה 50, סיבה 20, טיפול 30.',
-  mount(root, ctx) { runShift(root, ctx, S.ids); },
+  mount(root, ctx) { runShift(root, ctx, S.ids, S.t0); },
 }));
 
-function runShift(root, ctx, ids) {
+function runShift(root, ctx, ids, t0 = '21:00') {
   const list = shuffle(ids.map(id => CASES.find(c => c.id === id)));
   let idx = 0; const results = [];
   const doneN = () => results.filter(Boolean).length;
@@ -188,7 +188,7 @@ function runShift(root, ctx, ids) {
     const cur = idx;
     const c = list[idx], p = caseLabs(c), st = { dx: null, cause: null, tx: null }; host.innerHTML = '';
     const v = c.vitals;
-    const head = el(`<div><div class="row sp small muted"><span>מטופל ${idx + 1} מתוך ${list.length}</span></div><div class="bar" style="margin:8px 0"><i style="width:${100 * doneN() / list.length}%"></i></div></div>`);
+    const head = el(`<div><div class="row sp small muted"><span>מטופל ${idx + 1} מתוך ${list.length}</span><span>🕘 ${erClock(t0, idx)} · חדר מיון</span></div><div class="small" style="margin:8px 0 0;color:var(--muted)">👩‍⚕️ אחות: "${pick(NURSE)}"</div><div class="bar" style="margin:8px 0"><i style="width:${100 * doneN() / list.length}%"></i></div></div>`);
     head.appendChild(jumpBar(list.length, idx, list.map((_, k) => !!results[k]), j => { idx = j; patient(); window.scrollTo(0, 0); }));
     const card = el(`<div class="card"><div class="patient-head">${ART['patient_' + c.id] ? `<img class="avatar" src="${ART['patient_' + c.id]}" alt="${c.name}">` : `<div class="avatar">${c.emoji}</div>`}<div><h3 style="margin:0">${c.name}, ${c.sex === 'F' ? 'בת' : 'בן'} ${c.age}</h3><div class="muted small">${c.quip}</div></div></div>
       <p style="margin:10px 0 4px"><b>תלונה:</b> ${c.cc}</p>
@@ -201,8 +201,8 @@ function runShift(root, ctx, ids) {
     P.talk.innerHTML = `<button class="btn teal block" id="doan">💬 קחו אנמנזה</button><div id="anl" class="hide" style="margin-top:12px"><p class="muted small">מה המטופל/ת מספר/ת:</p>${c.hist.map(h => `<div class="qa"><span class="muted small">${h[0]}</span><br>${h[1]}</div>`).join('')}</div>`;
     $('#doan', P.talk).onclick = () => { $('#anl', P.talk).classList.remove('hide'); $('#doan', P.talk).classList.add('hide'); };
     // בדיקה גופנית
-    P.exam.innerHTML = `<button class="btn teal block" id="doex">🩺 בצעו בדיקה גופנית</button><ul id="exl" class="hide" style="padding-inline-start:20px;margin:12px 0 0">${c.exam.map(x => `<li style="margin:6px 0">${x}</li>`).join('')}</ul>`;
-    $('#doex', P.exam).onclick = () => { $('#exl', P.exam).classList.remove('hide'); $('#doex', P.exam).classList.add('hide'); };
+    P.exam.innerHTML = `<button class="btn teal block" id="doex">🩺 בצעו בדיקה גופנית</button>${ART['exam_' + c.id] ? `<figure id="exi" class="hide" style="margin:12px 0 0"><img src="${ART['exam_' + c.id]}" alt="ממצאי הבדיקה הגופנית" style="width:100%;border-radius:14px"><figcaption class="small muted" style="margin-top:6px">${EXAMCAP[c.id] || ''}</figcaption></figure>` : ''}<ul id="exl" class="hide" style="padding-inline-start:20px;margin:12px 0 0">${c.exam.map(x => `<li style="margin:6px 0">${x}</li>`).join('')}</ul>`;
+    $('#doex', P.exam).onclick = () => { const fi = $('#exi', P.exam); if (fi) fi.classList.remove('hide'); $('#exl', P.exam).classList.remove('hide'); $('#doex', P.exam).classList.add('hide'); };
     // בדיקות דם
     const shown = Object.keys(TESTS).filter(k => c.must.includes(k) || c.useful.includes(k));
     P.tests.innerHTML = `<button class="btn teal block" id="dobl">🧪 קבלו תוצאות בדיקות דם</button><div id="res" class="hide" style="margin-top:12px">${shown.map(k => `<div class="slip"><b>${TESTS[k].ic} ${TESTS[k].n}</b>${testHTML(c, p, k)}</div>`).join('')}</div>`;
@@ -223,7 +223,7 @@ function runShift(root, ctx, ids) {
       const left = list.map((_, k) => k).filter(k => !results[k]); const nxt = left.find(k => k > cur); const last = left.length === 0;
       const sm = el(`<div class="card" style="margin-top:14px"><h3>סיכום המטופל: ${pts}/100</h3>
         <div class="kpi"><div><b>${st.dx ? 50 : 0}/50</b><span>אבחנה</span></div><div><b>${st.cause ? 20 : 0}/20</b><span>סיבה</span></div><div><b>${st.tx ? 30 : 0}/30</b><span>טיפול</span></div></div>
-        <div class="explain row" style="flex-wrap:nowrap">${c.art && ART[c.art] ? `<img src="${ART[c.art]}" alt="" style="width:84px;height:auto;flex:0 0 84px">` : ''}<span>📌 ${c.teach}</span></div><button class="btn primary block" id="nx" style="margin-top:12px">${last ? 'לסיכום המשמרת 🏁' : 'המטופל הבא ←'}</button></div>`);
+        <div class="explain row" style="flex-wrap:nowrap">${c.art && ART[c.art] ? `<img src="${ART[c.art]}" alt="" style="width:84px;height:auto;flex:0 0 84px">` : ''}<span>📌 ${c.teach}</span></div>${pts >= 70 ? expertCard(pts === 100 ? 'great' : 'good') : ''}<button class="btn primary block" id="nx" style="margin-top:12px">${last ? 'לסיכום המשמרת 🏁' : 'המטופל הבא ←'}</button></div>`);
       P.dx.appendChild(sm); sm.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       $('#nx', sm).onclick = () => { idx = last ? list.length : (nxt != null ? nxt : left[0]); patient(); window.scrollTo(0, 0); };
     }
@@ -235,7 +235,8 @@ function runShift(root, ctx, ids) {
     const extra = `<div class="card"><h3>${rank[0]}</h3><p>${rank[1]}</p><div class="kpi"><div><b>${avg}</b><span>ממוצע למטופל</span></div><div><b>${rs.filter(r => r.dx).length}/${rs.length}</b><span>אבחנות נכונות</span></div></div>
       <table class="lab"><thead><tr><th>מטופל</th><th>אבחנה</th><th>ניקוד</th></tr></thead><tbody>${rs.map(r => `<tr><td>${r.c.emoji} ${r.c.name}</td><td>${r.dx ? '✅' : '❌'} ${DXOPT[r.c.dx]}</td><td class="v">${r.pts}</td></tr>`).join('')}</tbody></table>
       <button class="btn block" id="sharebtn" style="margin-top:12px">📤 שליחת התוצאות למורה</button></div>`;
-    ctx.finish(avg, extra);
+    const per = rs.filter(r => r.pts === 100).length, rk = diagRank(per, rs.length); ctx.rank = rk;
+    ctx.finish(avg, rankCard(rk, per, rs.length) + extra);
     const sb = $('#sharebtn', root); if (sb) sb.onclick = shareResultsModal;
   }
   patient();

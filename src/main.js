@@ -5,7 +5,7 @@ const PARTS = {
   B: { l: 'ב׳', t: 'אבחון מבדיקות דם', d: 'מקבלים בדיקות דם ומחליטים איזו אנמיה זו', col: 'var(--teal)', ic: '🧪' },
   C: { l: 'ג׳', t: 'תורנות מיון', d: 'מטופלים אמיתיים: שיחה, בדיקות, אבחנה וטיפול', col: 'var(--violet)', ic: '🚑' },
 };
-const SECS = { basics: ['🧬 הבסיס: תא הדם האדום', 'מבנה, חמצן, ייצור, ברזל וויטמינים וסוגי דם'], anemia: ['🩸 חמש האנמיות', 'תסמינים, אבחון והבדלים'] };
+const SECS = { basics: ['🧬 הבסיס: תא הדם האדום', 'מבנה, חמצן, ייצור, ברזל וויטמינים וסוגי דם'], anemia: ['🩸 חמש האנמיות', 'תסמינים, אבחון והבדלים'], review: ['🏁 חזרה ובחינה', 'חזרה על הנקודות החלשות שלכם, ובחינה מסכמת'] };
 const view = () => $('#view');
 
 function themeInit() { try { const t = localStorage.getItem('hemolab_theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { } }
@@ -14,10 +14,11 @@ themeInit();
 
 function shell() {
   document.title = CFG.TITLE;
-  document.body.innerHTML = `<header class="topbar"><div class="brand" id="logo"><span style="width:34px;height:34px;display:inline-block">${ART.mascot_happy ? `<img src="${ART.mascot_happy}" alt="" style="width:100%;height:100%">` : mascotSVG('happy')}</span><span>${CFG.TITLE}</span></div><div class="sp"></div>${IS_TEACHER ? '<span class="chip t">🎓 דף מורה</span>' : ''}<span class="chip" id="stars" ${IS_TEACHER ? 'style="display:none"' : ''}>⭐ 0</span></header>
+  document.body.innerHTML = `<header class="topbar"><div class="brand" id="logo"><span style="width:34px;height:34px;display:inline-block">${ART.mascot_happy ? `<img src="${ART.mascot_happy}" alt="" style="width:100%;height:100%">` : mascotSVG('happy')}</span><span>${CFG.TITLE}</span></div><div class="sp"></div>${IS_TEACHER ? '<span class="chip t">🎓 דף מורה</span>' : ''}<span class="chip" id="stars" ${IS_TEACHER ? 'style="display:none"' : ''}>⭐ 0</span><button class="chip" id="snd" type="button" aria-label="צלילים">${Snd.on ? '🔊' : '🔇'}</button></header>
   <main class="page" id="view"></main>
   <footer class="credit">פותח על ידי אורי העליון</footer>
-  <nav class="nav" aria-label="ניווט ראשי" ${TBAKED ? 'style="display:none"' : ''}>${(IS_TEACHER ? [['home', '🎓', 'מורה'], ['a', '📘', 'חלק א׳'], ['b', '🧪', 'חלק ב׳'], ['c', '🚑', 'חלק ג׳'], ['key', '📋', 'מפתח']] : [['home', '🏠', 'בית'], ['a', '📘', 'א׳ חזרה'], ['b', '🧪', 'ב׳ אבחון'], ['c', '🚑', 'ג׳ מיון'], ['me', '👤', 'אני']].filter(n => !LOCK || n[0] === 'me' || (n[0] !== 'home' && allowedParts().includes(n[0])))).map(n => `<a href="#/${n[0]}" data-n="${n[0]}"><span class="ic">${n[1]}</span><span>${n[2]}</span></a>`).join('')}</nav>`;
+  <nav class="nav" aria-label="ניווט ראשי" ${TLOCK ? 'style="display:none"' : ''}>${(IS_TEACHER ? [['home', '🎓', 'מורה'], ['a', '📘', 'חלק א׳'], ['b', '🧪', 'חלק ב׳'], ['c', '🚑', 'חלק ג׳'], ['key', '📋', 'מפתח']] : [['home', '🏠', 'בית'], ['a', '📘', 'א׳ חזרה'], ['b', '🧪', 'ב׳ אבחון'], ['c', '🚑', 'ג׳ מיון'], ['me', '👤', 'אני']].filter(n => !LOCK || n[0] === 'me' || (n[0] !== 'home' && allowedParts().includes(n[0])))).map(n => `<a href="#/${n[0]}" data-n="${n[0]}"><span class="ic">${n[1]}</span><span>${n[2]}</span></a>`).join('')}</nav>`;
+  $('#snd').onclick = () => { const on = Snd.toggle(); $('#snd').textContent = on ? '🔊' : '🔇'; if (on) Snd.play('ok'); };
   $('#logo').onclick = () => location.hash = LOCK ? '#/' + allowedParts()[0] : '#/home';
 }
 function updateTop(route) {
@@ -54,11 +55,18 @@ function home() {
   const sh = $('#shr'); if (sh) sh.onclick = shareResultsModal;
 }
 
+function journeyMap(gs) {
+  const nodes = gs.filter(g => g.id !== 'a_review' && g.id !== 'a_exam'); if (!nodes.length) return '';
+  const done = nodes.map(g => Store.stars(g.id) > 0), nowI = done.indexOf(false), nd = done.filter(Boolean).length;
+  return `<div class="card journey"><h3 style="margin-top:0">🗺️ מסע תא הדם</h3><p class="small muted" style="margin-top:0">כל משחק הוא תחנה. ${nowI < 0 ? 'סיימתם את כל המסע! 🎉' : `דמי מחכה בתחנה הבאה (${nd} מתוך ${nodes.length} הושלמו).`}</p>
+    <div class="jmap">${nodes.map((g, i) => `<button class="jn ${done[i] ? 'done' : ''} ${i === nowI ? 'now' : ''}" data-g="${g.id}" aria-label="${g.title}">${i === nowI && (ART.mascot_happy) ? `<img class="jdemi" src="${ART.mascot_happy}" alt="">` : ''}<span class="jic">${done[i] ? '✅' : g.icon}</span><span class="jt">${g.title.split(':')[0]}</span></button>`).join('')}</div></div>`;
+}
 function partPage(p) {
   const P = PARTS[p], gs = gamesOfPart(p);
   let h = `<div class="hero" style="${ART.hero_bg ? heroBg(p === 'A' ? 'rgba(160,30,55,.65),rgba(110,30,60,.5)' : p === 'B' ? 'rgba(15,110,115,.65),rgba(26,90,150,.5)' : 'rgba(110,70,200,.65),rgba(60,40,140,.5)') : 'background:linear-gradient(135deg,' + (p === 'A' ? '#d23b4c,#8e1b2e' : p === 'B' ? '#0f9b95,#1a6fa0' : '#7a4fd6,#4b2f9c') + ')'}">${mascot(p === 'C' ? 'think' : 'happy')}<div><h1>חלק ${P.l}: ${P.t}</h1><p>${P.d}</p></div></div>`;
   if (p === 'A') {
     h += `<div class="card soft small">📘 כאן חוזרים בקצרה, בעזרת כלים קטנים ומשחקיים, על עקרונות חשובים באנטומיה ובפיזיולוגיה של תא הדם האדום. זה לא תחליף ללימוד, אלא חזרה מהירה וחביבה. אפשר לעבוד לפי הסדר או לדלג בין יחידות.</div>`;
+    h += flowStrip() + journeyMap(gs);
     Object.keys(SECS).forEach(s => { const g = gs.filter(x => x.sec === s); h += `<div class="part"><h2 style="margin:0">${SECS[s][0]}</h2></div><p class="muted small" style="margin-top:0">${SECS[s][1]}</p><div class="grid">${g.map(tile).join('')}</div>`; });
   } else if (p === 'B') {
     h += `<div class="card soft"><b>איך זה עובד?</b> מקבלים תוצאות בדיקות דם ובוחרים: איזו אנמיה זו? כל רמה קשה יותר מקודמתה.</div><div class="grid">${gs.map(tile).join('')}</div>
@@ -97,7 +105,8 @@ function router() {
   const h = location.hash.replace(/^#\/?/, '') || 'home', [r, id] = h.split('/');
   window.scrollTo(0, 0);
   if (LOCK) { const ap = allowedParts(), okG = r === 'g' && gameById(id) && gameAllowed(gameById(id)); if (!(r === 'me' || okG || ap.includes(r))) { location.replace('#/' + ap[0]); return; } }
-  if (TBAKED) { $$('.nav a').forEach(a => a.classList.remove('on')); mountGame(TBAKED, view()); return; }
+  if (TGAME) { mountGame(BAKED, view()); return; }
+  if (TPART && !(r === 'g' || r === BAKED)) { location.replace('#/' + BAKED); return; }
   if (r === 'g') { updateTop('a'); const g = gameById(id); $$('.nav a').forEach(a => a.classList.toggle('on', g && a.dataset.n === g.part.toLowerCase())); mountGame(id, view()); return; }
   updateTop(r);
   if (r === 'home') home(); else if (r === 'a' || r === 'b' || r === 'c') partPage(r.toUpperCase()); else if (r === 'me') mePage(); else if (r === 'key' && IS_TEACHER) keyPage(view()); else home();
