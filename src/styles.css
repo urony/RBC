@@ -304,3 +304,5 @@ svg.chart{direction:ltr}
 @media (prefers-reduced-motion:reduce){.flow i{animation:none;inset-inline-start:40%}}
 
 .certpg{break-after:page;page-break-after:always}.certpg:last-child{break-after:auto;page-break-after:auto}
+
+.tbanner{position:sticky;top:0;z-index:21;height:46px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;background:#5b36b8;color:#fff;text-align:center}.tbanner b{font-size:1rem}.tbanner span{font-size:.72rem;opacity:.92}body.tmode .topbar{top:46px}@media print{.tbanner{display:none!important}}
