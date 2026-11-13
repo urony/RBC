@@ -14,14 +14,14 @@ themeInit();
 
 function shell() {
   document.title = CFG.TITLE;
-  document.body.innerHTML = `<header class="topbar"><div class="brand" id="logo"><span style="width:34px;height:34px;display:inline-block">${ART.mascot_happy ? `<img src="${ART.mascot_happy}" alt="" style="width:100%;height:100%">` : mascotSVG('happy')}</span><span>${CFG.TITLE}</span></div><div class="sp"></div>${IS_TEACHER ? '<span class="chip t">🎓 מצב מורה</span>' : ''}<span class="chip" id="stars">⭐ 0</span></header>
+  document.body.innerHTML = `<header class="topbar"><div class="brand" id="logo"><span style="width:34px;height:34px;display:inline-block">${ART.mascot_happy ? `<img src="${ART.mascot_happy}" alt="" style="width:100%;height:100%">` : mascotSVG('happy')}</span><span>${CFG.TITLE}</span></div><div class="sp"></div>${IS_TEACHER ? '<span class="chip t">🎓 דף מורה</span>' : ''}<span class="chip" id="stars" ${IS_TEACHER ? 'style="display:none"' : ''}>⭐ 0</span></header>
   <main class="page" id="view"></main>
   <footer class="credit">פותח על ידי אורי העליון</footer>
-  <nav class="nav" aria-label="ניווט ראשי">${[['home', '🏠', 'בית'], ['a', '📘', 'א׳ חזרה'], ['b', '🧪', 'ב׳ אבחון'], ['c', '🚑', 'ג׳ מיון'], ['me', '👤', 'אני']].filter(n => !LOCK || n[0] === 'me' || (n[0] !== 'home' && allowedParts().includes(n[0]))).concat(IS_TEACHER ? [['t', '🎓', 'מורה']] : []).map(n => `<a href="#/${n[0]}" data-n="${n[0]}"><span class="ic">${n[1]}</span><span>${n[2]}</span></a>`).join('')}</nav>`;
+  <nav class="nav" aria-label="ניווט ראשי" ${TBAKED ? 'style="display:none"' : ''}>${(IS_TEACHER ? [['home', '🎓', 'מורה'], ['a', '📘', 'חלק א׳'], ['b', '🧪', 'חלק ב׳'], ['c', '🚑', 'חלק ג׳'], ['key', '📋', 'מפתח']] : [['home', '🏠', 'בית'], ['a', '📘', 'א׳ חזרה'], ['b', '🧪', 'ב׳ אבחון'], ['c', '🚑', 'ג׳ מיון'], ['me', '👤', 'אני']].filter(n => !LOCK || n[0] === 'me' || (n[0] !== 'home' && allowedParts().includes(n[0])))).map(n => `<a href="#/${n[0]}" data-n="${n[0]}"><span class="ic">${n[1]}</span><span>${n[2]}</span></a>`).join('')}</nav>`;
   $('#logo').onclick = () => location.hash = LOCK ? '#/' + allowedParts()[0] : '#/home';
 }
 function updateTop(route) {
-  $('#stars').textContent = '⭐ ' + Store.totalStars();
+  if (!IS_TEACHER) $('#stars').textContent = '⭐ ' + Store.totalStars();
   $$('.nav a').forEach(a => a.classList.toggle('on', a.dataset.n === route));
 }
 
@@ -37,6 +37,7 @@ function tile(g) { return `<button class="tile" data-g="${g.id}">${starsHTML(Sto
 
 function heroBg(g) { return ART.hero_bg ? `background:linear-gradient(135deg,${g}),url(${ART.hero_bg}) center/cover` : ''; }
 function home() {
+  if (IS_TEACHER) { teacherPage(view()); return; }
   const hasName = !!Store.d.name;
   const prog = Object.keys(PARTS).map(k => ({ k, ...partProgress(k) }));
   const next = GAMES.find(g => !Store.stars(g.id));
@@ -65,9 +66,9 @@ function partPage(p) {
   } else {
     h += `<div class="card soft small">🚑 לכל מטופל: אנמנזה ← בדיקה גופנית ← תוצאות בדיקות דם ← אבחנה, סיבה וטיפול.</div><div class="grid">${gs.map(tile).join('')}</div>`;
   }
-  if (LOCK) h = h.replace('</div></div>', '</div></div>' + nameCard(), 1);
+  if (LOCK && !IS_TEACHER) h = h.replace('</div></div>', '</div></div>' + nameCard(), 1);
   view().innerHTML = h;
-  if (LOCK) bindName(() => partPage(p));
+  if (LOCK && !IS_TEACHER) bindName(() => partPage(p));
 }
 function refTable() {
   const bk = (k, sx) => BOOK_RANGE[k] && BOOK_RANGE[k][sx] ? `<br><span class="small" style="color:var(--teal)">בבחינה: ${BOOK_RANGE[k][sx][0]}–${BOOK_RANGE[k][sx][1]}</span>` : '';
@@ -85,10 +86,7 @@ function mePage() {
     <button class="btn block" id="shr">📤 שליחת התוצאות למורה</button>
     <div class="card" style="margin-top:14px"><h3>מראה</h3><div class="seg"><button data-th="auto">אוטומטי</button><button data-th="light">בהיר</button><button data-th="dark">כהה</button></div></div>
     <button class="btn ghost block" id="rs">🗑️ איפוס כל הנתונים במכשיר</button>
-    <p class="small muted center" style="margin-top:14px">הנתונים שלכם נשמרים רק בדפדפן במכשיר הזה.</p>
-    ${IS_TEACHER ? `<div class="card" style="margin-top:14px"><h3>🎓 מצב מורה פעיל</h3><div class="row"><a class="btn primary grow" href="#/t">לדף המורה</a><button class="btn grow" id="tx">יציאה ממצב מורה</button></div></div>` : `<details class="card" style="margin-top:14px"><summary class="small muted">🎓 כניסת מורה</summary><div class="row" style="margin-top:8px"><input type="password" id="tk" placeholder="מילת הסוד של המורה" style="flex:1"><button class="btn sm" id="tl">כניסה</button></div></details>`}`;
-  const tl = $('#tl'); if (tl) tl.onclick = () => { if ($('#tk').value.trim() === CFG.TEACHER_KEY) { try { localStorage.setItem(TLS, '1'); } catch (e) { } location.replace(location.pathname + '#/t'); location.reload(); } else toast('מילה שגויה'); };
-  const tx = $('#tx'); if (tx) tx.onclick = () => { try { localStorage.removeItem(TLS); } catch (e) { } location.replace(location.pathname + '#/me'); location.reload(); };
+    <p class="small muted center" style="margin-top:14px">הנתונים שלכם נשמרים רק בדפדפן במכשיר הזה.</p>`;
   $('#sv').onclick = () => { Store.setName($('#nm').value, $('#cl').value); toast('נשמר ✅'); updateTop('me'); };
   $('#shr').onclick = () => { if (!Store.d.name) { toast('הוסיפו קודם שם'); return; } shareResultsModal(); };
   $('#rs').onclick = () => { if (confirm('למחוק את השם, הציונים וההתקדמות במכשיר הזה?')) { Store.reset(); mePage(); updateTop('me'); } };
@@ -99,9 +97,10 @@ function router() {
   const h = location.hash.replace(/^#\/?/, '') || 'home', [r, id] = h.split('/');
   window.scrollTo(0, 0);
   if (LOCK) { const ap = allowedParts(), okG = r === 'g' && gameById(id) && gameAllowed(gameById(id)); if (!(r === 'me' || okG || ap.includes(r))) { location.replace('#/' + ap[0]); return; } }
+  if (TBAKED) { $$('.nav a').forEach(a => a.classList.remove('on')); mountGame(TBAKED, view()); return; }
   if (r === 'g') { updateTop('a'); const g = gameById(id); $$('.nav a').forEach(a => a.classList.toggle('on', g && a.dataset.n === g.part.toLowerCase())); mountGame(id, view()); return; }
   updateTop(r);
-  if (r === 'home') home(); else if (r === 'a' || r === 'b' || r === 'c') partPage(r.toUpperCase()); else if (r === 'me') mePage(); else if (r === 't' && IS_TEACHER) teacherPage(view()); else if (r === 'key' && IS_TEACHER) keyPage(view()); else home();
+  if (r === 'home') home(); else if (r === 'a' || r === 'b' || r === 'c') partPage(r.toUpperCase()); else if (r === 'me') mePage(); else if (r === 'key' && IS_TEACHER) keyPage(view()); else home();
 }
 document.addEventListener('click', e => { const q = e.target.closest('.qm'); if (q) { const nx = q.closest('tr').nextElementSibling; if (nx && nx.classList.contains('hrow')) { nx.hidden = !nx.hidden; q.setAttribute('aria-expanded', String(!nx.hidden)); } return; } const t = e.target.closest('[data-g]'); if (t) { location.hash = '#/g/' + t.dataset.g; } });
 window.addEventListener('hashchange', router);

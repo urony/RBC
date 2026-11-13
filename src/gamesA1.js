@@ -167,6 +167,7 @@ registerGame({
     ];
     const EO = { hi: 'EPO גבוה מהנורמה', lo: 'EPO נמוך מהנורמה', norm: 'EPO תקין (או ללא שינוי)' };
     const FO = { norm: 'יחזור לנורמה', up: 'יתייצב מעל הנורמה', down: 'יתייצב מתחת לנורמה' };
+    if (ctx.tview) { ctx.tview({ SCN, EO, FO }); return; }
     function simulate(p, days = 90) {
       let R = p.R0 || 100, E = 1; const lag = 4, pipe = Array(lag).fill(100 / 120), Rs = [], Es = [], Ts = [];
       if (p.bleed) R -= p.bleed;

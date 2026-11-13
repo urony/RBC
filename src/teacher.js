@@ -10,45 +10,39 @@ const TStore = {
 TStore.load();
 const GAME_TITLE = id => { const g = gameById(id); return g ? g.title : id; };
 
+/* ===== דף המורה: מסך הפתיחה של קובץ המורה ===== */
+const PART_ICON = { A: '📘', B: '🧪', C: '🚑' };
 function teacherPage(root) {
-  const base = location.origin === 'null' || location.protocol === 'file:' ? location.href.split('?')[0] : location.origin + location.pathname;
-  const studentLink = base, teacherLink = base + '?t=' + CFG.TEACHER_KEY;
+  const base = location.protocol === 'file:' ? location.href.split(/[?#]/)[0].replace(/[^/\\]*$/, '') : location.origin + location.pathname.replace(/[^/]*$/, '');
   const rows = TStore.d.rows;
   const allG = GAMES.map(g => g.id);
   const avgOf = r => { const v = Object.values(r.g).map(x => x[0]); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0; };
   const mis = {}; rows.forEach(r => Object.keys(r.m || {}).forEach(k => mis[k] = (mis[k] || 0) + r.m[k]));
   const topMis = Object.entries(mis).sort((a, b) => b[1] - a[1]).slice(0, 8);
   const perGame = allG.map(id => { const v = rows.map(r => r.g[id] ? r.g[id][0] : null).filter(x => x != null); return { id, n: v.length, avg: v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null }; });
-  root.innerHTML = `<h1>🎓 מצב מורה</h1>
-    ${say('כאן הפתרונות מוצגים בכל המשחקים (סימון "מפתח"), וכאן אפשר לאסוף את התוצאות של התלמידים.', 'happy')}
-    <div class="card"><h2>איך עובדים במצב מורה?</h2><ol class="small" style="padding-inline-start:20px;margin:6px 0">
-      <li>נכנסים לכל משחק כרגיל (כפתורי הניווט למטה): התשובה הנכונה מסומנת בירוק עם הסבר, ובתחתית כל משחק יש "הערה למורה".</li>
-      <li><b>רשימת כל התשובות הנכונות</b> במקום אחד: <a href="#/key"><b>📋 מפתח תשובות</b></a> (אפשר להדפיס או לשמור כקובץ).</li>
-      <li>כשמסיימים: "אני" ← "יציאה ממצב מורה". המצב נשמר במכשיר הזה בלבד.</li></ol>
-      <a class="btn primary block" href="#/key">📋 מפתח תשובות לכל המשחקים</a></div>
-    <div class="card"><h2>🔗 קישורים</h2>
-      <p class="small muted">קישור לתלמידים (בלי פתרונות):</p><div class="row"><input type="text" readonly value="${esc(studentLink)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(studentLink)}">העתקה</button></div>
-      <p class="small muted" style="margin-top:12px">קישור למורה (עם פתרונות וטופס איסוף תוצאות):</p><div class="row"><input type="text" readonly value="${esc(teacherLink)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(teacherLink)}">העתקה</button></div>
-      <div class="explain" style="margin-top:12px">ℹ️ קישור המורה מוגן רק במילת סוד בכתובת (<span class="ltr">?t=${CFG.TEACHER_KEY}</span>). זו הגנה פשוטה למניעת כניסה בטעות – לא הגנה אמיתית: תלמיד סקרן שיקרא את קוד הדף יוכל למצוא את המילה. אפשר להחליף את המילה במשתנה <span class="ltr">TEACHER_KEY</span> בתחילת הקוד.</div></div>
-    <div class="card"><h2>✂️ קישורים נפרדים לכל חלק</h2>
-      <p class="small muted">כל קישור פותח לתלמידים רק את מה שנבחר, בלי שיראו את שאר החלקים. אפשר גם לחבר כמה חלקים: <span class="ltr">?only=a,c</span></p>
-      ${[['a', '📘 חלק א׳ – חזרה אינטראקטיבית על עקרונות חשובים'], ['b', '🧪 חלק ב׳ – אבחון מבדיקות דם'], ['c', '🚑 חלק ג׳ – תורנות מיון']].map(([k, t]) => { const l = base + '?only=' + k; return `<p class="small" style="margin:12px 0 4px"><b>${t}</b></p><div class="row"><input type="text" readonly value="${esc(l)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(l)}">העתקה</button></div>`; }).join('')}
-      <details style="margin-top:14px"><summary><b>קישור למשחק בודד</b></summary>${GAMES.map(g => { const l = base + '?only=' + g.id; return `<p class="small" style="margin:10px 0 4px">${g.icon} ${g.title}</p><div class="row"><input type="text" readonly value="${esc(l)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(l)}">העתקה</button></div>`; }).join('')}</details></div>
-    <div class="card"><h2>📦 קבצי HTML נפרדים לשליחה</h2>
-      <p class="small">בכל בנייה נוצרים קבצים עצמאיים (בלי קישור ובלי אינטרנט) בתיקייה <span class="ltr">anemia-tool/dist/parts</span>:</p>
-      <ul class="small" style="padding-inline-start:20px;margin:6px 0"><li><span class="ltr">part-A.html</span> · <span class="ltr">part-B.html</span> · <span class="ltr">part-C.html</span> – חלק שלם</li><li><span class="ltr">game-&lt;מזהה&gt;.html</span> – משחק בודד (למשל <span class="ltr">game-a_epo.html</span>)</li></ul>
-      <p class="small muted">שולחים את הקובץ בוואטסאפ או במייל, והתלמיד פותח אותו בדפדפן. באנדרואיד זה עובד טוב; באייפון פתיחת קובץ HTML מהוואטסאפ לא תמיד עובדת, ושם עדיף קישור. אחרי כל עדכון של הכלי צריך לשלוח את הקובץ מחדש.</p></div>
-    <div class="card"><h2>📥 איסוף תוצאות תלמידים</h2>
+  const gameRow = g => `<div class="row sp" style="gap:8px;padding:8px 0;border-top:1px solid var(--line)"><div class="row" style="gap:10px;flex:1;min-width:0"><span style="font-size:1.6rem">${g.icon}</span><div style="min-width:0"><b>${g.title}</b><div class="muted small">${g.desc}</div></div></div><button class="btn sm primary" data-g="${g.id}">👁️ תשובות</button></div>`;
+  const partCard = p => `<div class="card"><h2>${PART_ICON[p]} חלק ${PARTS[p].l}: ${PARTS[p].t}</h2>${GAMES.filter(g => g.part === p).map(gameRow).join('')}</div>`;
+  root.innerHTML = `<h1>🎓 דף מורה</h1>
+    ${say('כל התשובות כאן פתוחות מראש: בוחרים משחק ורואים את הפתרון המלא, בלי ללחוץ על כלום. במטופלים עוברים בין 1, 2, 3 וכן הלאה.', 'happy')}
+    <div class="card" style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn primary grow" href="#/key">📋 מפתח תשובות מלא (להדפסה)</a><a class="btn grow" href="#results">📥 תוצאות תלמידים</a></div>
+    ${['A', 'B', 'C'].map(partCard).join('')}
+    <div class="card"><h2>📦 מה שולחים</h2>
+      <p class="small">לתלמידים שולחים את <b>קובץ התלמיד</b> (בלי תשובות). למורים שולחים את <b>קובץ המורה</b> (כמו הדף הזה). כל קובץ הוא עצמאי, ואפשר לשלוח גם משחק בודד.</p>
+      <ul class="small" style="padding-inline-start:20px;margin:6px 0">
+        <li>קובץ תלמיד, הכול: <span class="ltr">index.html</span> · חלק שלם: <span class="ltr">parts/part-A.html</span> (או B, C) · משחק בודד: <span class="ltr">parts/game-&lt;מזהה&gt;.html</span></li>
+        <li>קובץ מורה, הכול: <span class="ltr">teacher.html</span> · משחק בודד עם תשובות: <span class="ltr">teacher-parts/teacher-game-&lt;מזהה&gt;.html</span></li></ul>
+      <details><summary><b>מזהי המשחקים</b></summary>${GAMES.map(g => `<p class="small" style="margin:8px 0 2px">${g.icon} ${g.title}: <span class="ltr"><b>${g.id}</b></span></p><div class="row" style="gap:6px"><input type="text" readonly value="parts/game-${g.id}.html" style="direction:ltr;flex:1"><button class="btn sm" data-cp="parts/game-${g.id}.html">העתקה</button></div>`).join('')}</details>
+      <p class="small muted" style="margin-top:8px">מיקום הקבצים בתיקייה: <span class="ltr">${esc(base)}</span>. באנדרואיד קובץ HTML שנשלח בוואטסאפ נפתח היטב; באייפון עדיף קישור (אחרי פרסום). אחרי כל עדכון צריך לשלוח את הקובץ מחדש.</p></div>
+    <div class="card" id="results"><h2>📥 איסוף תוצאות תלמידים</h2>
       <p class="small muted">כל תלמיד לוחץ על "שליחת תוצאות" ומעביר לכם קוד שמתחיל ב-HL1. הדביקו כאן קוד אחד או כמה (מופרדים בשורות).</p>
       <textarea id="paste" placeholder="הדביקו כאן קודים…" style="direction:ltr"></textarea>
       <div class="row" style="margin-top:8px"><button class="btn primary grow" id="imp">ייבוא</button><button class="btn" id="csv" ${rows.length ? '' : 'disabled'}>⬇️ CSV</button><button class="btn ghost" id="clr" ${rows.length ? '' : 'disabled'}>🗑️ ניקוי</button></div>
       <p class="small muted" style="margin-top:8px">הנתונים נשמרים בדפדפן שלכם בלבד, במכשיר הזה.</p></div>
     ${rows.length ? `<div class="card"><h2>👩‍🎓 תלמידים (${rows.length})</h2><div style="overflow-x:auto"><table class="lab"><thead><tr><th>שם</th><th>כיתה</th><th>משחקים</th><th>ממוצע</th><th></th></tr></thead><tbody>${rows.map((r, i) => `<tr><td>${esc(r.n)}</td><td>${esc(r.c)}</td><td class="v">${Object.keys(r.g).length}/${allG.length}</td><td class="v">${avgOf(r)}%</td><td><button class="btn sm" data-st="${i}">פרטים</button></td></tr>`).join('')}</tbody></table></div></div>
       <div class="card"><h2>📈 ממוצע כיתתי לפי משחק</h2>${perGame.map(g => `<div class="meter"><div class="nm small">${GAME_TITLE(g.id)} <span class="muted">(${g.n})</span></div><div class="bar"><i style="width:${g.avg || 0}%"></i></div><b class="small" style="width:44px;text-align:end">${g.avg == null ? '–' : g.avg + '%'}</b></div>`).join('')}</div>
-      <div class="card"><h2>⚠️ הטעויות הנפוצות בכיתה</h2>${topMis.length ? topMis.map(([k, n]) => `<div class="row sp" style="margin:6px 0"><span>${TAGS[k] || k}</span><span class="pill r">${n}</span></div>`).join('') : '<p class="muted">עדיין אין נתונים.</p>'}</div>` : ''}
-    <div class="card"><h2>📚 ספריית מקרי תורנות המיון</h2><p class="small muted">כל המטופלים עם האבחנה, הבדיקות החיוניות ונקודת הלימוד.</p>
-      ${CASES.map(c => `<details style="margin:8px 0"><summary><b>${c.emoji} ${c.name}</b>, ${c.age} – ${DXOPT[c.dx]} ${c.urgent ? '🚨' : ''}</summary><div class="small" style="padding:8px 4px"><p><b>תלונה:</b> ${c.cc}</p><p><b>בדיקות חיוניות:</b> ${c.must.map(k => TESTS[k].n).join(', ')}</p><p><b>טיפול נכון:</b> ${c.tx.find(x => x.ok).t}</p><p><b>נקודת לימוד:</b> ${c.teach}</p>${labRows(PANEL.cbc.concat(['RET']).concat(PANEL.iron, PANEL.vit, PANEL.hemo, PANEL.infl), caseLabs(c).vals, c.sex)}</div></details>`).join('')}</div>`;
+      <div class="card"><h2>⚠️ הטעויות הנפוצות בכיתה</h2>${topMis.length ? topMis.map(([k, n]) => `<div class="row sp" style="margin:6px 0"><span>${TAGS[k] || k}</span><span class="pill r">${n}</span></div>`).join('') : '<p class="muted">עדיין אין נתונים.</p>'}</div>` : ''}`;
   on(root, 'click', '[data-cp]', async (e, b) => { try { await navigator.clipboard.writeText(b.dataset.cp); toast('הועתק ✅'); } catch (er) { toast('סמנו והעתיקו ידנית'); } });
+  const rs = $('a[href="#results"]', root); if (rs) rs.onclick = e => { e.preventDefault(); $('#results', root).scrollIntoView({ behavior: 'smooth' }); };
   const imp = $('#imp', root); if (imp) imp.onclick = () => {
     const lines = $('#paste', root).value.split(/\n+/); let n = 0, bad = 0;
     lines.forEach(l => { if (!l.trim()) return; const o = ResultCode.parse(l); if (o) { TStore.add(o); n++; } else bad++; });
@@ -66,6 +60,98 @@ function teacherPage(root) {
     modal(`<h2>${esc(r.n)} ${r.c ? '· ' + esc(r.c) : ''}</h2><p class="small muted">נשלח: ${new Date(r.t).toLocaleString('he-IL')}</p>${Object.keys(r.g).map(id => `<div class="meter"><div class="nm small">${GAME_TITLE(id)}</div><div class="bar"><i style="width:${r.g[id][0]}%"></i></div><b class="small" style="width:44px;text-align:end">${r.g[id][0]}%</b></div>`).join('') || '<p class="muted">אין משחקים.</p>'}
       <h3 style="margin-top:14px">טעויות נפוצות</h3>${Object.entries(r.m || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => `<div class="row sp small" style="margin:4px 0"><span>${TAGS[k] || k}</span><span class="pill r">${n}</span></div>`).join('') || '<p class="muted small">אין.</p>'}`);
   });
+}
+
+/* ===== מבט מורה על משחק: כל התשובות פתוחות מראש ===== */
+const optsKey = (q, opts) => `<div class="q" style="margin-top:12px">${q}</div>` + opts.map(o => o.ok ? `<div class="explain good" style="margin:6px 0">✅ <b>${o.t}</b>${o.why ? `<div class="small">${o.why}</div>` : ''}</div>` : `<div class="small" style="margin:6px 12px;color:var(--muted)">✗ ${o.t}${o.why ? ` <span class="muted">– ${o.why}</span>` : ''}</div>`).join('');
+
+function teacherCmpTable() {
+  const cols = ['ida', 'mega', 'hemo', 'acd', 'aplastic'];
+  return `<div class="card" style="overflow-x:auto;padding:10px"><p class="small muted">בכל האנמיות ההמוגלובין נמוך. שתי תשובות בתא = שתיהן מתקבלות.</p><table class="cmp"><thead><tr><th>מדד</th>${cols.map(c => `<th>${ANEMIA_CATS[c].ic}<br><span class="small">${ANEMIA_CATS[c].short}</span></th>`).join('')}</tr></thead><tbody>${CMP_ROWS.map(r => `<tr><th class="small">${r[0]}</th>${cols.map(c => `<td><b>${r[1][c].join(' / ')}</b></td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
+function teacherCardsView() {
+  const SECN = { mech: '⚙️ מנגנון', causes: '🧩 גורמים', clin: '🩺 קליניקה', dx: '🧪 אבחון', tx: '💊 טיפול', comp: '⚠️ סיבוכים' };
+  return Object.keys(ANEM_CARDS).map(k => { const C = ANEM_CARDS[k], I = ANEMIA_CATS[k]; return `<details class="card" open><summary><b>${I.ic} ${I.n}</b></summary>${Object.keys(SECN).filter(x => C[x]).map(x => `<p style="margin:10px 0 2px"><b>${SECN[x]}</b></p>${Array.isArray(C[x]) ? `<ul class="small" style="padding-inline-start:20px;margin:0">${C[x].map(t => `<li>${t}</li>`).join('')}</ul>` : `<p class="small" style="margin:0">${C[x]}</p>`}`).join('')}</details>`; }).join('');
+}
+function teacherEpoView(E) {
+  return `<h3 style="margin:14px 0 6px">✅ התרחישים והתשובות</h3>` + E.SCN.map(s => `<div class="card"><h3>${s.ic} ${s.t}</h3><div class="explain good">✅ <b>${E.EO[s.epo]}</b> · מספר תאי הדם האדומים <b>${E.FO[s.fin]}</b><div class="small">${s.exp}</div></div></div>`).join('');
+}
+function teacherBankView(body, B) {
+  let cur = 0; const host = el('<div></div>'); body.appendChild(host);
+  function render() {
+    host.innerHTML = ''; host.appendChild(jumpBar(B.rounds.length, cur, [], j => { cur = j; render(); window.scrollTo(0, 0); }));
+    const R = B.rounds[cur], p = R.pt, isOk = u => R.emergency ? (u.abo === 'O' && !u.rh) : B.safe(u, p);
+    host.insertAdjacentHTML('beforeend', `<div class="card"><div class="patient-head">${R.emergency ? '<div class="avatar">🚑</div>' : bloodCellABO(p.abo, p.rh, 64)}<div><h3 style="margin:0">מטופל ${cur + 1} מתוך ${B.rounds.length}: ${R.emergency ? 'חירום! דימום מסיבי, סוג הדם לא ידוע' : `סוג דם ${B.lbl(p)}`}</h3>${R.emergency ? '' : `<div class="muted small">נוגדנים טבעיים: ${B.anti(p.abo)}${p.rh ? '' : ' · Rh שלילי: לא יקבל Rh חיובי'}</div>`}</div></div>
+      <div class="q" style="margin-top:12px">אילו יחידות דם מתאימות? (מסומנות בירוק)</div>
+      <div class="grid">${R.units.map(u => { const ok = isOk(u); return `<div class="tile ${ok ? 't-ok' : ''}" style="align-items:center;min-height:120px;${ok ? 'border-color:var(--good);background:var(--good-soft)' : ''}">${bloodCellABO(u.abo, u.rh, 56)}<b class="ltr">${u.abo}${u.rh ? '+' : '−'}</b><span class="small">${ok ? '✅ מתאימה' : (!B.aboOK(u.abo, p.abo) ? '✗ נוגדנים נגד האנטיגן הזר' : '✗ Rh חיובי למקבל Rh שלילי')}</span></div>`; }).join('')}</div>
+      ${R.emergency ? '<div class="explain good" style="margin-top:10px">O שלילי הוא "התורם האוניברסלי": אין עליו אנטיגני A, B או D.</div>' : ''}</div>`);
+  }
+  render();
+}
+
+function teacherGameView(g, body, mkCtx) {
+  if (g.part === 'B') return teacherLabView(g, body);
+  if (g.part === 'C') return teacherShiftView(g, body);
+  let special = '';
+  if (g.id === 'a_cards') special = teacherCardsView();
+  if (g.id === 'a_compare' || g.id === 'a_reverse') special = teacherCmpTable();
+  if (g.id === 'a_epo' || g.id === 'a_bank') {
+    const host = el('<div></div>'); body.appendChild(host);
+    g.mount(el('<div></div>'), { ...mkCtx(g, host), tview: v => { if (g.id === 'a_epo') host.innerHTML = teacherEpoView(v); else teacherBankView(host, v); } });
+  }
+  const d = collectKey([g])[0];
+  const learned = g.learned && g.learned.length ? `<div class="card learned"><h3>📚 מה למדנו (מה שהתלמיד רואה בסיום)</h3><ul>${g.learned.map(x => `<li>${x}</li>`).join('')}</ul></div>` : '';
+  const key = d ? gameKeyBlock(d, null, true) : '';
+  const hasKey = d && (d.q.length || d.o.length || d.b.length || d.m.length);
+  body.insertAdjacentHTML('beforeend', special + (hasKey ? `<h3 style="margin:14px 0 6px">✅ כל התשובות הנכונות</h3>` + key : (special || g.id === 'a_epo' || g.id === 'a_bank') ? '' : '<div class="card soft small">משחק סימולציה: אין שאלות עם תשובה אחת נכונה. הסבר המשחק מופיע ב"הערה למורה" למעלה, ואפשר להפעיל אותו ולנסות בעצמכם.</div>') + learned);
+  const play = el('<div class="card"><button class="btn primary block" id="tplay">▶ הפעלת המשחק (עם סימון התשובות)</button><div id="tgame" style="margin-top:12px"></div></div>');
+  body.appendChild(play);
+  $('#tplay', play).onclick = () => { $('#tplay', play).remove(); const host = $('#tgame', play); g.mount(host, mkCtx(g, host)); };
+}
+
+function teacherLabView(g, body) {
+  const mode = { b_l1: 1, b_l2: 2, b_l3: 3 }[g.id] || 1, edge = mode === 2;
+  let types = labTypes(mode === 3 ? 7 : 8).slice(0, mode === 3 ? 7 : 8), pats = [], cur = 0;
+  const host = el('<div></div>'); body.appendChild(host);
+  function render() {
+    host.innerHTML = '';
+    host.appendChild(jumpBar(types.length, cur, [], j => { cur = j; render(); window.scrollTo(0, 0); }));
+    const type = types[cur], p = pats[cur] || (pats[cur] = makePatient(type, edge)), info = DX_INFO[p.cat], sub = SUBDX[p.cat];
+    const subTxt = sub ? (() => { const k = sub.ok(p.cat === 'mega' ? p.vals : p); return `<br><b>${sub.q.replace(/^ומה /, 'ולכן ')}</b> ${sub.opts[k][0]}<div class="small muted">${sub.opts[k][1]}</div>`; })() : '';
+    resetLabNote();
+    let h = `<div class="card"><div class="patient-head"><div class="avatar">${p.sex === 'F' ? '👩' : '👨'}</div><div><h3 style="margin:0">מטופל ${cur + 1} מתוך ${types.length}: ${TYPE_NAME[type]}</h3><div class="muted">${patientLine(p)}</div></div></div></div>`;
+    const keys = mode === 3 ? ['cbc', 'retic'] : ['cbc', 'retic', 'iron', 'vit', 'hemo', 'infl'];
+    h += keys.map(k => panelCard(p, PANEL[k], PANEL_NAMES[k])).join('');
+    if (mode === 1) h += smearCard(p);
+    if (mode === 1) { const mcv = p.vals.MCV, cls = mcv < 80 ? 'מיקרוציטית (תאים קטנים)' : mcv > 100 ? 'מאקרוציטית (תאים גדולים)' : 'נורמוציטית (גודל תקין)'; h += `<div class="card flat" style="padding:12px;margin-top:8px"><div class="q">שלב 1: סוג האנמיה לפי MCV</div><div class="explain good" style="margin:6px 0">✅ <b>${cls}</b><div class="small">MCV ${mcv} fL (תקין 80–100)</div></div></div>`; }
+    if (mode === 3) { const best = NEXT_OK[type][0], kk = { iron: 'iron', vit: 'vit', hemo: 'hemo', infl: 'infl' }[best]; h += `<div class="card flat" style="padding:12px;margin-top:8px"><div class="q">הבדיקה הבאה הנכונה</div><div class="explain good" style="margin:6px 0">✅ <b>${NEXT_OPTS[best]}</b><div class="small">${NEXT_WHY[best]}</div></div>${best === 'marrow' ? `<p>${p.cat === 'aplastic' ? 'מח עצם <b>היפוצלולרי</b>: רקמת שומן במקום תאים מייצרי דם.' : ''}</p>` : panelCard(p, PANEL[kk], PANEL_NAMES[kk])}</div>`; }
+    h += `<div class="card flat" style="padding:12px;margin-top:8px"><div class="q">${mode === 1 ? 'שלב 2: ' : ''}מהי האנמיה?</div><div class="explain good" style="margin:6px 0">✅ <b>${CATOPT(p.cat)}</b>${subTxt}</div><b class="small">מה מצביע על כך כאן:</b>${labRows(info.key, p.vals, p.sex, info.key)}<ul class="small" style="padding-inline-start:20px;margin:8px 0 0">${info.pts.map(x => `<li>${x}</li>`).join('')}</ul></div>`;
+    if (mode !== 1) h += smearCard(p);
+    h += `<button class="btn block" id="newp" style="margin-top:10px">🔄 מטופל חדש במקום זה</button>`;
+    host.insertAdjacentHTML('beforeend', h);
+    $('#newp', host).onclick = () => { pats[cur] = null; render(); };
+  }
+  render();
+}
+
+function teacherShiftView(g, body) {
+  const S = Object.values(SHIFTS).find(x => x.id === g.id), cases = S.ids.map(id => CASES.find(c => c.id === id));
+  let cur = 0; const host = el('<div></div>'); body.appendChild(host);
+  function render() {
+    host.innerHTML = '';
+    host.appendChild(jumpBar(cases.length, cur, [], j => { cur = j; render(); window.scrollTo(0, 0); }));
+    const c = cases[cur], p = caseLabs(c), v = c.vitals;
+    resetLabNote();
+    const shown = Object.keys(TESTS).filter(k => c.must.includes(k) || c.useful.includes(k));
+    host.insertAdjacentHTML('beforeend', `<div class="card"><div class="patient-head">${ART['patient_' + c.id] ? `<img class="avatar" src="${ART['patient_' + c.id]}" alt="${c.name}">` : `<div class="avatar">${c.emoji}</div>`}<div><h3 style="margin:0">מטופל ${cur + 1} מתוך ${cases.length}: ${c.name}, ${c.sex === 'F' ? 'בת' : 'בן'} ${c.age}</h3><div class="muted small">${c.quip}</div></div></div>
+      <p style="margin:10px 0 4px"><b>תלונה:</b> ${c.cc}</p><p class="small muted">דופק ${v.hr} · לחץ דם ${v.bp} · סטורציה ${v.spo2}% · חום ${v.temp}</p>
+      <div class="explain good"><b>האבחנה:</b> ${DXOPT[c.dx]}${c.urgent ? ' · <b>🚨 חירום</b>' : ''}<div class="small">📌 ${c.teach}</div></div></div>
+      <div class="card"><h3>💬 אנמנזה</h3>${c.hist.map(h => `<div class="qa"><span class="muted small">${h[0]}</span><br>${h[1]}</div>`).join('')}</div>
+      <div class="card"><h3>🩺 בדיקה גופנית</h3><ul style="padding-inline-start:20px;margin:0">${c.exam.map(x => `<li style="margin:6px 0">${x}</li>`).join('')}</ul></div>
+      <div class="card"><h3>🧪 בדיקות דם</h3><p class="small muted">בדיקות חיוניות מסומנות ב-⭐:</p>${shown.map(k => `<div class="slip"><b>${TESTS[k].ic} ${TESTS[k].n}${c.must.includes(k) ? ' ⭐' : ''}</b>${testHTML(c, p, k)}</div>`).join('')}</div>
+      <div class="card"><h3>✅ אבחנה, סיבה וטיפול</h3>${optsKey('מהי האבחנה?', Object.keys(DXOPT).map(k => ({ t: DXSHORT[k], ok: k === c.dx })))}${optsKey(c.cause[0], c.cause[1])}${optsKey('מה הטיפול המתאים?', c.tx)}</div>`);
+  }
+  render();
 }
 
 
@@ -91,7 +177,7 @@ function litItems(src) {
   }
   return out;
 }
-function collectKey() {
+function collectKey(list) {
   const names = ['runQuiz', 'mcq', 'orderGame', 'binGame', 'matchGame', 'sortGame'];
   const saved = {}; names.forEach(n => saved[n] = window[n]);
   const res = []; let cur = null;
@@ -103,7 +189,7 @@ function collectKey() {
   window.binGame = (r, o) => { cur.b.push(o); go(() => o.onDone && o.onDone(100)); };
   window.sortGame = (r, o) => { cur.b.push(o); go(() => o.onDone && o.onDone(100)); };
   window.matchGame = (r, o) => { cur.m.push(o.pairs); go(() => o.onDone && o.onDone(100)); };
-  GAMES.filter(g => g.part === 'A').forEach(g => {
+  (list || GAMES.filter(g => g.part === 'A')).forEach(g => {
     cur = { g, q: [], o: [], b: [], m: [] };
     const root = dummy();
     go(() => g.mount(root, { game: g, root, teacher: true, finish() { } }));
@@ -118,14 +204,24 @@ function keyHTML() {
   const qli = it => { const r = it.options.filter(o => o.ok); return `<li><div>${it.q}</div><div class="kans">✔ ${r.map(o => o.t).join(' ; ')}</div>${r[0] && r[0].why ? `<div class="small muted">${r[0].why}</div>` : ''}</li>`; };
   let h = '<h1>📋 מפתח תשובות</h1><p class="small muted">חלק א׳ נאסף אוטומטית מהמשחקים (כך שהוא תמיד מעודכן). בחלק ב׳ המטופלים נוצרים אקראית בכל פעם, ולכן מופיעים כאן הכללים והדפוסים; בחלק ג׳ מופיעים כל המקרים.</p>';
   h += '<h2>📘 חלק א׳</h2>';
-  data.forEach(d => {
-    h += `<div class="card"><h3>${d.g.icon} ${d.g.title}</h3>${d.g.teacherNote ? `<p class="small"><b>הערה למורה:</b> ${d.g.teacherNote}</p>` : ''}`;
+  data.forEach(d => { h += gameKeyBlock(d, qli); });
+  h += KEY_REST(); return h;
+}
+function gameKeyBlock(d, qli, noNote) {
+  qli = qli || (it => { const r = it.options.filter(o => o.ok); return `<li><div>${it.q}</div><div class="kans">✔ ${r.map(o => o.t).join(' ; ')}</div>${r[0] && r[0].why ? `<div class="small muted">${r[0].why}</div>` : ''}</li>`; });
+  let h = '';
+  {
+    h += `<div class="card"><h3>${d.g.icon} ${d.g.title}</h3>${d.g.teacherNote && !noNote ? `<p class="small"><b>הערה למורה:</b> ${d.g.teacherNote}</p>` : ''}`;
     d.b.forEach(b => { h += `<p class="small"><b>מיון:</b></p><ul class="small">${b.buckets.map((bk, k) => `<li><b>${bk}:</b> ${b.items.filter(i => i.b === k).map(i => i.t).join(' · ')}</li>`).join('')}</ul>`; });
     d.o.forEach(st => { h += `<p class="small"><b>סדר נכון:</b></p><ol class="small">${st.map(x => `<li>${x}</li>`).join('')}</ol>`; });
     d.m.forEach(pr => { h += `<p class="small"><b>התאמות:</b></p><ul class="small">${pr.map(p => `<li>${p[0]} ← ${p[1]}</li>`).join('')}</ul>`; });
     if (d.q.length) h += `<p class="small"><b>שאלות (${d.q.length}):</b></p><ol class="kq small">${d.q.map(qli).join('')}</ol>`;
     h += '</div>';
-  });
+  }
+  return h;
+}
+function KEY_REST() {
+  let h = '';
   h += '<h2>🧪 חלק ב׳: כללי האבחון</h2>';
   Object.keys(ANEMIA_CATS).forEach(k => { const di = DX_INFO[k]; if (!di) return; h += `<div class="card"><h3>${ANEMIA_CATS[k].ic} ${ANEMIA_CATS[k].n}</h3>${di.need ? `<p class="small"><b>נדרש לאבחון:</b> ${di.need}</p>` : ''}<ul class="small">${(di.pts || []).map(x => `<li>${x}</li>`).join('')}</ul></div>`; });
   h += '<h2>🚑 חלק ג׳: כל המקרים</h2>';
@@ -133,7 +229,7 @@ function keyHTML() {
   return h;
 }
 function keyPage(root) {
-  root.innerHTML = `<div class="row noprint" style="margin-bottom:10px"><a class="btn sm" href="#/t">→ חזרה</a><button class="btn sm primary grow" id="kp">🖨️ הדפסה / PDF</button><button class="btn sm grow" id="kd">⬇️ שמירה כקובץ</button></div><div id="kbody">${keyHTML()}</div>`;
+  root.innerHTML = `<div class="row noprint" style="margin-bottom:10px"><a class="btn sm" href="#/home">→ חזרה</a><button class="btn sm primary grow" id="kp">🖨️ הדפסה / PDF</button><button class="btn sm grow" id="kd">⬇️ שמירה כקובץ</button></div><div id="kbody">${keyHTML()}</div>`;
   $('#kp', root).onclick = () => window.print();
   $('#kd', root).onclick = () => {
     const doc = `<!doctype html><html lang="he" dir="rtl"><meta charset="utf-8"><title>מפתח תשובות</title><body style="font-family:Arial,sans-serif;max-width:800px;margin:auto;padding:16px;line-height:1.5">${$('#kbody', root).innerHTML}</body></html>`;

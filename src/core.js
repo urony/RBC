@@ -1,18 +1,18 @@
 'use strict';
 /* ===== הגדרות ===== */
 const CFG = {
-  TEACHER_KEY: 'hemo-teacher',   // מילת הסוד בקישור המורה: ?t=hemo-teacher  (ניתן לשנות)
   STORE_KEY: 'hemolab_v1',
   TEACHER_STORE: 'hemolab_teacher_v1',
   TITLE: 'מעבדת הדם',
 };
 const QS = new URLSearchParams(location.search);
-const TLS = 'hemolab_teacher_on';   // כניסת מורה שנשמרת במכשיר (בלי צורך בקישור)
-let TLOG = false; try { TLOG = localStorage.getItem(TLS) === '1'; } catch (e) { }
-const IS_TEACHER = QS.get('t') === CFG.TEACHER_KEY || TLOG;
+/* מצב מורה נקבע בזמן הבנייה: קובץ המורה (teacher.html) נבנה עם TEACHER_BUILD, וקובץ התלמיד אינו כולל שום דרך להגיע אליו */
+const IS_TEACHER = (typeof TEACHER_BUILD !== 'undefined');
 const BAKED = (typeof BAKED_ONLY !== 'undefined') ? BAKED_ONLY : '';   // קובץ נפרד: נעול לחלק/משחק כבר בבנייה
-// נעילה לחלק/משחק מסוים: ?only=a  |  ?only=a,b  |  ?only=b_l1 (לא חל על מצב מורה)
+// נעילה לחלק/משחק מסוים: ?only=a  |  ?only=a,b  |  ?only=b_l1 (בקובץ תלמיד בלבד)
 const ONLY = IS_TEACHER ? [] : (QS.get('only') || BAKED).toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
+const TBAKED = IS_TEACHER ? BAKED : '';   // קובץ מורה למשחק בודד
+if (IS_TEACHER) CFG.STORE_KEY = 'hemolab_teacher_play';   // משחק של המורה לא מתערבב עם נתוני תלמיד
 const LOCK = ONLY.length > 0;
 const IMG = (typeof IMG_DATA !== 'undefined') ? IMG_DATA : {};
 const ART = (typeof ART_DATA !== 'undefined') ? ART_DATA : {};
@@ -230,6 +230,8 @@ function mountGame(id, root) {
   const body = el(`<div id="game-body"></div>`);
   root.append(hdr, body);
   hdr.querySelector('[data-back]').onclick = () => location.hash = '#/' + g.part.toLowerCase();
+  if (TBAKED) hdr.querySelector('[data-back]').remove();
   if (IS_TEACHER && g.teacherNote) body.appendChild(el(`<div class="tnote"><b>הערה למורה:</b> ${g.teacherNote}</div>`));
+  if (IS_TEACHER) { teacherGameView(g, body, makeCtx); return; }
   g.mount(body, makeCtx(g, body));
 }

@@ -23,20 +23,20 @@ const js = order.map(n => `/* ---- ${n}.js ---- */\n` + read(`src/${n}.js`)).joi
 const css = read('src/styles.css');
 const imgAll = folderToMap('assets'), artAll = folderToMap('art');
 
-function makeHtml(img, art, baked) {
+function makeHtml(img, art, baked, teacher) {
   return `<!doctype html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#d23b4c">
-<title>מעבדת הדם</title>
+<title>${teacher ? 'מעבדת הדם: דף מורה' : 'מעבדת הדם'}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>${css}</style>
 </head>
 <body><noscript>הכלי דורש JavaScript.</noscript>
-<script>const IMG_DATA=${JSON.stringify(img)};const ART_DATA=${JSON.stringify(art)};${baked ? `const BAKED_ONLY=${JSON.stringify(baked)};` : ''}</script>
+<script>${teacher ? 'const TEACHER_BUILD=true;' : ''}const IMG_DATA=${JSON.stringify(img)};const ART_DATA=${JSON.stringify(art)};${baked ? `const BAKED_ONLY=${JSON.stringify(baked)};` : ''}</script>
 <script>
 ${js}
 </script>
@@ -69,4 +69,13 @@ for (const p of ['a', 'b', 'c']) {
     const h = makeHtml(im, ar, baked); fs.writeFileSync(path.join(pdir, name), h); n++; tot += h.length;
   }
 }
+/* ===== קבצי מורה: teacher.html (הכול) ו-teacher-parts/teacher-game-<id>.html (משחק בודד, עם כל התשובות) ===== */
+fs.writeFileSync(path.join(root, 'dist/teacher.html'), makeHtml(imgAll, artAll, '', true));
+const tdir = path.join(root, 'dist/teacher-parts'); fs.rmSync(tdir, { recursive: true, force: true }); fs.mkdirSync(tdir, { recursive: true });
+let tn = 0;
+for (const p of ['a', 'b', 'c']) {
+  const im = pick(imgAll, p, () => false), ar = pick(artAll, p, artExtra(p));
+  for (const i of ids[p]) { fs.writeFileSync(path.join(tdir, `teacher-game-${i}.html`), makeHtml(im, ar, i, true)); tn++; }
+}
+console.log('built dist/teacher.html +', tn, 'teacher game files');
 console.log('built dist/parts:', n, 'files,', Math.round(tot / 1048576) + ' MB total | games:', ids.a.length + ids.b.length + ids.c.length);

@@ -161,15 +161,17 @@ registerGame({
       return { pt, units, emergency };
     }
     const rounds = Array.from({ length: 9 }, (_, k) => makeRound(k));
-    let i = 0, right = 0;
+    if (ctx.tview) { ctx.tview({ rounds, aboOK, safe, lbl, anti }); return; }
+    let i = 0; const resA = rounds.map(() => null); const rightN = () => resA.filter(Boolean).length;
     root.insertAdjacentHTML('afterbegin', say('כאן בנק הדם – כל טעות היא (חלילה) מסוכנת, אז טוב שזה משחק. 😅 לכל מטופל יש לפעמים יותר מיחידה מתאימה אחת. סמנו את כולן.', 'think'));
     const legend = el(`<div class="card soft small row">${bloodCellABO('AB', true, 38)}<span>🔵 אנטיגן A · 🟡 אנטיגן B · 🟢 אנטיגן D (Rh חיובי)</span></div>`); root.appendChild(legend);
     const host = el('<div></div>'); root.appendChild(host);
     function draw() {
       if (i >= rounds.length) { rhStage(); return; }
-      const R = rounds[i], p = R.pt; host.innerHTML = '';
+      const cur = i, R = rounds[i], p = R.pt; host.innerHTML = '';
       const isOk = u => R.emergency ? (u.abo === 'O' && !u.rh) : safe(u, p);
-      const c = el(`<div class="card"><div class="row sp small muted"><span>מטופל ${i + 1} מתוך ${rounds.length}</span><span>✓ ${right}</span></div><div class="bar" style="margin:8px 0"><i style="width:${100 * i / rounds.length}%"></i></div></div>`); host.appendChild(c);
+      const c = el(`<div class="card"><div class="row sp small muted"><span>מטופל ${i + 1} מתוך ${rounds.length}</span><span>✓ ${rightN()}</span></div><div class="bar" style="margin:8px 0"><i style="width:${100 * resA.filter(x => x != null).length / rounds.length}%"></i></div></div>`); host.appendChild(c);
+      c.appendChild(jumpBar(rounds.length, i, resA.map(x => x != null), j => { i = j; draw(); window.scrollTo(0, 0); }));
       if (R.emergency) c.insertAdjacentHTML('beforeend', `<div class="patient-head"><div class="avatar">🚑</div><div><h3 style="margin:0">חירום! דימום מסיבי</h3><div class="muted">סוג הדם של המטופל עדיין לא ידוע, ואין זמן לבדוק.</div></div></div>`);
       else c.insertAdjacentHTML('beforeend', `<div class="patient-head">${bloodCellABO(p.abo, p.rh, 64)}<div><h3 style="margin:0">מטופל/ת עם סוג דם ${lbl(p)}</h3><div class="muted small">נוגדנים טבעיים: ${anti(p.abo)}${p.rh ? '' : ' · Rh שלילי – לא יקבל Rh חיובי'}</div></div></div>`);
       c.insertAdjacentHTML('beforeend', `<div class="q" style="margin-top:12px">אילו יחידות דם מתאימות למטופל? <span class="muted small">(אפשר לסמן יותר מאחת, ואז ללחוץ "סיימתי")</span></div><div class="grid" id="un">${R.units.map((u, k) => `<button class="tile ${IS_TEACHER && isOk(u) ? 't-ok' : ''}" data-k="${k}" style="align-items:center;min-height:120px">${bloodCellABO(u.abo, u.rh, 56)}<span class="t">יחידה ${lbl(u)}</span></button>`).join('')}</div><button class="btn primary block" id="dn" style="margin-top:12px" disabled>סיימתי ✔</button><div id="fb"></div>`);
@@ -196,15 +198,16 @@ registerGame({
             if (missed.length) why += '➕ גם יחידה זו הייתה מתאימה: ' + missed.map(lbl).join(', ') + '.';
           }
         }
-        if (ok) right++;
-        $('#fb', c).innerHTML = `<div class="explain ${ok ? 'good' : 'bad'}">${ok ? '✅ ' : ''}${why}</div><button class="btn primary block" id="nx" style="margin-top:10px">הבא ←</button>`;
-        $('#nx', c).onclick = () => { i++; draw(); };
+        if (resA[cur] == null) resA[cur] = ok;
+        const left = resA.map((_, k) => k).filter(k => resA[k] == null), nxt = left.find(k => k > cur);
+        $('#fb', c).innerHTML = `<div class="explain ${ok ? 'good' : 'bad'}">${ok ? '✅ ' : ''}${why}</div><button class="btn primary block" id="nx" style="margin-top:10px">${left.length ? 'הבא ←' : 'להמשך ←'}</button>`;
+        $('#nx', c).onclick = () => { i = left.length ? (nxt != null ? nxt : left[0]) : rounds.length; draw(); window.scrollTo(0, 0); };
       });
     }
     draw();
     function rhStage() {
       host.innerHTML = ''; legend.remove();
-      const base = Math.round(100 * right / rounds.length);
+      const base = Math.round(100 * rightN() / rounds.length);
       host.insertAdjacentHTML('beforeend', say('עכשיו לחלק הדרמטי: Rh והיריון. תעלומה שלמה במשפחה אחת…', 'wow'));
       const wrap = { ...ctx, finish: (p, ex) => ctx.finish(Math.round((base + p) / 2), ex) };
       runQuiz(host, wrap, [
