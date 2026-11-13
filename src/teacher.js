@@ -13,8 +13,7 @@ const GAME_TITLE = id => { const g = gameById(id); return g ? g.title : id; };
 /* ===== דף המורה: מסך הפתיחה של קובץ המורה ===== */
 const PART_ICON = { A: '📘', B: '🧪', C: '🚑' };
 function teacherPage(root) {
-  const base = location.protocol === 'file:' ? location.href.split(/[?#]/)[0].replace(/[^/\\]*$/, '') : location.origin + location.pathname.replace(/[^/]*$/, '');
-  const rows = TStore.d.rows;
+    const rows = TStore.d.rows;
   const allG = GAMES.map(g => g.id);
   const avgOf = r => { const v = Object.values(r.g).map(x => x[0]); return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : 0; };
   const mis = {}; rows.forEach(r => Object.keys(r.m || {}).forEach(k => mis[k] = (mis[k] || 0) + r.m[k]));
@@ -24,15 +23,8 @@ function teacherPage(root) {
   const partCard = p => `<div class="card"><h2>${PART_ICON[p]} חלק ${PARTS[p].l}: ${PARTS[p].t}</h2>${GAMES.filter(g => g.part === p).map(gameRow).join('')}</div>`;
   root.innerHTML = `<h1>🎓 דף מורה</h1>
     ${say('כל התשובות כאן פתוחות מראש: בוחרים משחק ורואים את הפתרון המלא, בלי ללחוץ על כלום. במטופלים עוברים בין 1, 2, 3 וכן הלאה.', 'happy')}
-    <div class="card" style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn primary grow" href="#/key">📋 מפתח תשובות מלא (להדפסה)</a><a class="btn grow" href="#results">📥 תוצאות תלמידים</a></div>
+    <div class="card" style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn primary grow" href="#/key">📋 מפתח תשובות מלא (להדפסה)</a><a class="btn grow" href="#results">📥 תוצאות תלמידים</a><a class="btn grow" href="#/certs">🎓 מחולל תעודות</a></div>
     ${['A', 'B', 'C'].map(partCard).join('')}
-    <div class="card"><h2>📦 מה שולחים</h2>
-      <p class="small">לתלמידים שולחים את <b>קובץ התלמיד</b> (בלי תשובות). למורים שולחים את <b>קובץ המורה</b> (כמו הדף הזה). כל קובץ הוא עצמאי, ואפשר לשלוח גם משחק בודד.</p>
-      <ul class="small" style="padding-inline-start:20px;margin:6px 0">
-        <li><b>תלמיד:</b> הכול: <span class="ltr">index.html</span> · חלק שלם: <span class="ltr">parts/part-A.html</span> (או B, C) · משחק בודד: <span class="ltr">parts/game-&lt;מזהה&gt;.html</span></li>
-        <li><b>מורה (עם תשובות):</b> הכול: <span class="ltr">teacher.html</span> · חלק שלם: <span class="ltr">teacher-parts/teacher-part-A.html</span> (או B, C) · משחק בודד: <span class="ltr">teacher-parts/teacher-game-&lt;מזהה&gt;.html</span></li></ul>
-      <details><summary><b>מזהי המשחקים</b></summary>${GAMES.map(g => `<p class="small" style="margin:8px 0 2px">${g.icon} ${g.title}: <span class="ltr"><b>${g.id}</b></span></p><div class="row" style="gap:6px"><input type="text" readonly value="parts/game-${g.id}.html" style="direction:ltr;flex:1"><button class="btn sm" data-cp="parts/game-${g.id}.html">העתקה</button></div>`).join('')}</details>
-      <p class="small muted" style="margin-top:8px">מיקום הקבצים בתיקייה: <span class="ltr">${esc(base)}</span>. באנדרואיד קובץ HTML שנשלח בוואטסאפ נפתח היטב; באייפון עדיף קישור (אחרי פרסום). אחרי כל עדכון צריך לשלוח את הקובץ מחדש.</p></div>
     <div class="card" id="results"><h2>📥 איסוף תוצאות תלמידים</h2>
       <p class="small muted">כל תלמיד לוחץ על "שליחת תוצאות" ומעביר לכם קוד שמתחיל ב-HL1. הדביקו כאן קוד אחד או כמה (מופרדים בשורות).</p>
       <textarea id="paste" placeholder="הדביקו כאן קודים…" style="direction:ltr"></textarea>
@@ -237,4 +229,42 @@ function keyPage(root) {
     const doc = `<!doctype html><html lang="he" dir="rtl"><meta charset="utf-8"><title>מפתח תשובות</title><body style="font-family:Arial,sans-serif;max-width:800px;margin:auto;padding:16px;line-height:1.5">${$('#kbody', root).innerHTML}</body></html>`;
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([doc], { type: 'text/html;charset=utf-8' })); a.download = 'answer-key.html'; a.click();
   };
+}
+
+/* ===== מחולל תעודות למורה: שמות, סוג תעודה, נושא; הדפסה או PDF לכולם בבת אחת ===== */
+function certsPage(root) {
+  const D = { kind: 'part', what: '', free: '', pct: '', sig: '', dr: null, sel: 0 };
+  try { const s = JSON.parse(localStorage.getItem('hemolab_certgen') || '{}'); Object.assign(D, s, { sel: 0 }); } catch (e) { }
+  const names = () => ($('#cnames', root).value || '').split(/\n+/).map(x => x.trim()).filter(Boolean);
+  root.innerHTML = `<button class="back" data-back>→ חזרה לדף המורה</button><h1>🎓 מחולל תעודות</h1>
+    <div class="card"><p class="small muted" style="margin-top:0">כותבים שם בכל שורה, בוחרים סוג תעודה ונושא, ומדפיסים. כל תלמיד מקבל עמוד משלו; בחלון ההדפסה אפשר לבחור "שמירה כ-PDF".</p>
+      <label class="small"><b>שמות התלמידים</b> (שם בכל שורה)</label><textarea id="cnames" placeholder="נועה כהן&#10;דני לוי" style="min-height:110px">${esc(D.names || '')}</textarea>
+      <label class="small"><b>סוג תעודה</b></label><select id="ckind"><option value="part">תעודת השתתפות</option><option value="done">תעודת סיום</option><option value="excel">תעודת הצטיינות</option></select>
+      <label class="small"><b>על מה?</b></label><select id="cwhat"><option value="">הכלי כולו (מעבדת הדם)</option>${GAMES.map(g => `<option value="${g.id}">${esc(g.title)}</option>`).join('')}</select>
+      <input type="text" id="cfree" placeholder="או נושא חופשי, למשל: שיעור המטולוגיה, פרק אנמיות (לא חובה)" maxlength="60" style="margin-top:6px">
+      <div class="row" style="margin-top:6px;gap:8px"><input type="number" id="cpct" placeholder="ציון (לא חובה)" min="0" max="100" style="flex:1"><input type="text" id="csig" placeholder="שם החותם/ת, למשל: המורה דנה" maxlength="30" style="flex:2"></div>
+      <label class="row small" style="margin-top:8px;gap:8px"><input type="checkbox" id="cdr" style="width:auto"> להוסיף "ד״ר" לפני השם</label></div>
+    <div class="card"><div class="row sp"><b>תצוגה מקדימה</b><span class="small muted" id="cnt"></span></div><div id="cchips" class="row" style="gap:6px;flex-wrap:wrap;margin:8px 0"></div><div id="cprev"></div>
+      <div class="row" style="margin-top:12px"><button class="btn primary grow" id="cprintall">🖨️ הדפסה / PDF לכולם</button><button class="btn grow" id="cpng1">⬇️ תמונה לתלמיד המוצג</button></div></div>`;
+  $('#ckind', root).value = D.kind; $('#cwhat', root).value = D.what; $('#cfree', root).value = D.free; $('#cpct', root).value = D.pct; $('#csig', root).value = D.sig;
+  $('#cdr', root).checked = D.dr == null ? D.kind === 'excel' : !!D.dr;
+  const build = nm => {
+    const g = $('#cwhat', root).value ? gameById($('#cwhat', root).value) : null, free = $('#cfree', root).value.trim(), pct = $('#cpct', root).value;
+    return { name: nm, kind: $('#ckind', root).value, dr: $('#cdr', root).checked, what: free || (g ? 'משחק ' + g.title : 'מעבדת הדם'), pct: pct === '' ? null : Math.max(0, Math.min(100, +pct)), sig: 'חתימת ' + ($('#csig', root).value.trim() || 'המורה'), date: new Date().toLocaleDateString('he-IL'), sub: free ? 'מעבדת הדם' : undefined };
+  };
+  const refresh = () => {
+    const n = names(); D.sel = Math.min(D.sel, Math.max(0, n.length - 1));
+    $('#cnt', root).textContent = n.length ? `${n.length} תעודות` : 'עוד אין שמות';
+    $('#cchips', root).innerHTML = n.map((x, i) => `<button type="button" class="btn small${i === D.sel ? ' primary' : ''}" data-i="${i}">${esc(x)}</button>`).join('');
+    $('#cprev', root).innerHTML = certHTML(build(n[D.sel] || ''));
+    ['cprintall', 'cpng1'].forEach(id => $('#' + id, root).disabled = !n.length);
+    try { localStorage.setItem('hemolab_certgen', JSON.stringify({ names: $('#cnames', root).value, kind: $('#ckind', root).value, what: $('#cwhat', root).value, free: $('#cfree', root).value, pct: $('#cpct', root).value, sig: $('#csig', root).value, dr: $('#cdr', root).checked })); } catch (e) { }
+  };
+  ['cnames', 'ckind', 'cwhat', 'cfree', 'cpct', 'csig', 'cdr'].forEach(id => { $('#' + id, root).addEventListener('input', refresh); $('#' + id, root).addEventListener('change', refresh); });
+  $('#ckind', root).addEventListener('change', () => { $('#cdr', root).checked = $('#ckind', root).value === 'excel'; refresh(); });
+  $('[data-back]', root).onclick = () => location.hash = '#/home';
+  $('#cchips', root).onclick = e => { const b = e.target.closest('[data-i]'); if (b) { D.sel = +b.dataset.i; refresh(); } };
+  $('#cprintall', root).onclick = () => printCerts(names().map(build));
+  $('#cpng1', root).onclick = () => { const n = names(); certPng(build(n[D.sel])); };
+  refresh();
 }

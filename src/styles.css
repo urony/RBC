@@ -302,3 +302,5 @@ svg.chart{direction:ltr}
 .flow i{position:absolute;top:5px;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 50% 50%,#f6a1ad 0 22%,#d23b4c 24%);box-shadow:inset 0 0 0 2px #b52c3f;animation:flowx 7s linear infinite}
 @keyframes flowx{from{inset-inline-start:-30px}to{inset-inline-start:100%}}
 @media (prefers-reduced-motion:reduce){.flow i{animation:none;inset-inline-start:40%}}
+
+.certpg{break-after:page;page-break-after:always}.certpg:last-child{break-after:auto;page-break-after:auto}

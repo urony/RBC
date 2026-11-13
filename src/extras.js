@@ -55,59 +55,79 @@ function rankCard(r, perfect, n) {
   return `<div class="card center rank"><div class="row" style="justify-content:center;gap:14px;flex-wrap:nowrap">${ART[r.img] ? `<img src="${ART[r.img]}" alt="" style="width:92px">` : '<span style="font-size:3rem">🏅</span>'}<div style="text-align:start"><h3 style="margin:0">${r.t}</h3><div class="muted small">${perfect} מתוך ${n} אבחונים נכונים בלי שום טעות</div></div></div></div>`;
 }
 
-/* ---- תעודת סיום: הדפסה / PDF והורדה כתמונה ---- */
+/* ---- תעודות: השתתפות / סיום / הצטיינות. הדפסה או PDF, הורדה כתמונה ושיתוף ---- */
+const CERT_KINDS = {
+  part: { h: 'תעודת השתתפות', dr: false, line: c => `על השתתפות פעילה ב${c.what}` },
+  done: { h: 'תעודת סיום', dr: false, line: c => `על סיום ${c.pct != null ? `בציון <b>${c.pct}%</b> ` : ''}ב${c.what}` },
+  excel: { h: 'תעודת הצטיינות', dr: true, line: c => `על הישג ${c.pct != null ? `של <b>${c.pct}%</b> ` : ''}ב${c.what}` },
+};
 function certData(game, pct, rank) {
-  return { name: (Store.d.name || '').trim(), title: game.title, pct, rank, date: new Date().toLocaleDateString('he-IL') };
+  return { name: (Store.d.name || '').trim(), what: 'משחק ' + game.title, pct, rank, kind: pct >= 70 ? 'excel' : 'part', sig: 'חתימת המומחה/ית', date: new Date().toLocaleDateString('he-IL') };
+}
+function certTexts(c) {
+  const k = CERT_KINDS[c.kind || 'excel'], dr = c.dr == null ? k.dr : c.dr;
+  return { h: k.h, name: (dr ? 'ד״ר ' : '') + (c.name || 'שם התלמיד/ה'), line: k.line(c), sub: c.sub || 'מעבדת הדם · חזרה אינטראקטיבית על אנמיות' };
 }
 function certHTML(c) {
-  const exp = ART[EXP_IMG[EXP_G].great[0]];
+  const exp = ART[EXP_IMG[EXP_G].great[0]], t = certTexts(c);
   return `<div class="cert"><div class="cert-in">
     <div class="cert-top">${c.rank && ART[c.rank.img] ? `<img src="${ART[c.rank.img]}" alt="" class="cert-badge">` : '<span class="cert-star">🏅</span>'}</div>
-    <div class="cert-h">תעודת הצטיינות</div>
-    <div class="cert-s">מעבדת הדם · חזרה אינטראקטיבית על אנמיות</div>
+    <div class="cert-h">${t.h}</div>
+    <div class="cert-s">${esc(t.sub)}</div>
     <div class="cert-s">מוענקת בזאת ל</div>
-    <div class="cert-name">ד״ר ${esc(c.name || 'שם התלמיד/ה')}</div>
-    <div class="cert-s">על הישג של <b>${c.pct}%</b> במשחק <b>${esc(c.title)}</b></div>
+    <div class="cert-name">${esc(t.name)}</div>
+    <div class="cert-s">${t.line}</div>
     ${c.rank ? `<div class="cert-rank">${c.rank.t}</div>` : ''}
-    <div class="cert-foot"><div>${c.date}</div>${exp ? `<img src="${exp}" alt="" class="cert-exp">` : ''}<div>חתימת המומחה/ית ✍️</div></div>
+    <div class="cert-foot"><div>${c.date}</div>${exp ? `<img src="${exp}" alt="" class="cert-exp">` : ''}<div>${esc(c.sig || 'חתימת המומחה/ית')} ✍️</div></div>
   </div></div>`;
 }
+/* הדפסה של תעודה אחת או כמה: כל תעודה בעמוד A4 לרוחב */
+function printCerts(list) {
+  const st = document.createElement('style'); st.id = 'certpage'; st.textContent = '@page{size:A4 landscape;margin:8mm}';
+  const host = document.createElement('div'); host.id = 'certprint'; host.innerHTML = list.map(c => `<div class="certpg">${certHTML(c)}</div>`).join('');
+  document.head.appendChild(st); document.body.appendChild(host); document.body.classList.add('cert-printing');
+  const clean = () => { host.remove(); st.remove(); document.body.classList.remove('cert-printing'); window.removeEventListener('afterprint', clean); };
+  window.addEventListener('afterprint', clean); setTimeout(() => window.print(), 60);
+}
 function certModal(game, pct, rank) {
-  const c = certData(game, pct, rank);
-  const m = modal(`<h2 style="margin-top:0">🎓 תעודת סיום</h2>${c.name ? '' : '<p class="small muted">כתבו שם כדי שיופיע בתעודה:</p><input type="text" id="cn" placeholder="שם או כינוי" maxlength="30" style="margin-bottom:10px">'}<div id="certhost">${certHTML(c)}</div>
+  const c = certData(game, pct, rank), isP = c.kind === 'part';
+  const m = modal(`<h2 style="margin-top:0">🎓 ${isP ? 'תעודת השתתפות' : 'תעודת הצטיינות'}</h2>${c.name ? '' : '<p class="small muted">כתבו שם כדי שיופיע בתעודה:</p><input type="text" id="cn" placeholder="שם או כינוי" maxlength="30" style="margin-bottom:10px">'}<div id="certhost">${certHTML(c)}</div>
     <div class="row" style="margin-top:12px"><button class="btn primary grow" id="cprint">🖨️ הדפסה / שמירה כ-PDF</button><button class="btn grow" id="cpng">⬇️ הורדה כתמונה</button></div>
+    <button class="btn block" id="cshare" style="margin-top:8px">📤 שליחה למורה (שיתוף תמונה)</button>
     <button class="btn ghost block" id="cx" style="margin-top:8px">סגירה</button>
-    <p class="small muted" style="margin-top:8px">להורדת PDF: בחלון ההדפסה בוחרים "שמירה כ-PDF" כיעד.</p>`);
+    <p class="small muted" style="margin-top:8px">להורדת PDF: בחלון ההדפסה בוחרים "שמירה כ-PDF" כיעד. אפשר גם להוריד כתמונה ולשלוח למורה.</p>`);
   const redraw = () => { $('#certhost', m).innerHTML = certHTML(c); };
   const cn = $('#cn', m); if (cn) cn.oninput = () => { c.name = cn.value.trim(); redraw(); };
+  const need = () => { if (!c.name && cn) { toast('כתבו קודם שם'); return true; } return false; };
   $('#cx', m).onclick = () => m.remove();
-  $('#cprint', m).onclick = () => {
-    if (!c.name && cn) { toast('כתבו קודם שם'); return; }
-    const st = document.createElement('style'); st.id = 'certpage'; st.textContent = '@page{size:A4 landscape;margin:8mm}';
-    const host = document.createElement('div'); host.id = 'certprint'; host.innerHTML = certHTML(c);
-    document.head.appendChild(st); document.body.appendChild(host); document.body.classList.add('cert-printing');
-    const clean = () => { host.remove(); st.remove(); document.body.classList.remove('cert-printing'); window.removeEventListener('afterprint', clean); };
-    window.addEventListener('afterprint', clean); setTimeout(() => window.print(), 60);
-  };
-  $('#cpng', m).onclick = () => { if (!c.name && cn) { toast('כתבו קודם שם'); return; } certPng(c); };
+  $('#cprint', m).onclick = () => { if (!need()) printCerts([c]); };
+  $('#cpng', m).onclick = () => { if (!need()) certPng(c); };
+  $('#cshare', m).onclick = () => { if (!need()) certPng(c, true); };
 }
-function certPng(c) {
+function certPng(c, share) {
   const W = 1600, H = 1130, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
   const load = src => new Promise(r => { if (!src) return r(null); const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = src; });
-  const font = w => `${w} px Heebo, Arial, sans-serif`;
+  const t = certTexts(c), plain = t.line.replace(/<[^>]+>/g, '');
   Promise.all([load(c.rank && ART[c.rank.img]), load(ART[EXP_IMG[EXP_G].great[0]]), document.fonts ? document.fonts.ready : 0]).then(([badge, exp]) => {
     const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#fff8ee'); bg.addColorStop(1, '#ffe9e4'); g.fillStyle = bg; g.fillRect(0, 0, W, H);
     g.strokeStyle = '#d4a017'; g.lineWidth = 14; g.strokeRect(40, 40, W - 80, H - 80); g.strokeStyle = '#d23b4c'; g.lineWidth = 4; g.strokeRect(70, 70, W - 140, H - 140);
     g.direction = 'rtl'; g.textAlign = 'center'; g.fillStyle = '#3a2430';
-    if (badge) g.drawImage(badge, W / 2 - 100, 100, 200, 200);
-    g.fillStyle = '#d23b4c'; g.font = '800 92px Heebo, Arial, sans-serif'; g.fillText('תעודת הצטיינות', W / 2, 400);
-    g.fillStyle = '#6b5560'; g.font = '500 38px Heebo, Arial, sans-serif'; g.fillText('מעבדת הדם · חזרה אינטראקטיבית על אנמיות', W / 2, 460); g.fillText('מוענקת בזאת ל', W / 2, 530);
-    g.fillStyle = '#1b9a68'; g.font = '800 104px Heebo, Arial, sans-serif'; g.fillText('ד״ר ' + (c.name || 'שם התלמיד/ה'), W / 2, 650);
-    g.fillStyle = '#3a2430'; g.font = '500 40px Heebo, Arial, sans-serif'; g.fillText(`על הישג של ${c.pct}% במשחק ${c.title}`, W / 2, 735);
+    if (badge) g.drawImage(badge, W / 2 - 100, 100, 200, 200); else { g.font = '120px serif'; g.fillText('🏅', W / 2, 260); }
+    g.fillStyle = '#d23b4c'; g.font = '800 92px Heebo, Arial, sans-serif'; g.fillText(t.h, W / 2, 400);
+    g.fillStyle = '#6b5560'; g.font = '500 38px Heebo, Arial, sans-serif'; g.fillText(t.sub, W / 2, 460); g.fillText('מוענקת בזאת ל', W / 2, 530);
+    g.fillStyle = '#1b9a68'; g.font = '800 104px Heebo, Arial, sans-serif'; g.fillText(t.name, W / 2, 650);
+    g.fillStyle = '#3a2430'; g.font = '500 40px Heebo, Arial, sans-serif'; g.fillText(plain, W / 2, 735);
     if (c.rank) { g.fillStyle = '#b8860b'; g.font = '800 62px Heebo, Arial, sans-serif'; g.fillText(c.rank.t, W / 2, 830); }
-    g.fillStyle = '#6b5560'; g.font = '500 34px Heebo, Arial, sans-serif'; g.fillText(c.date, W - 260, 1000); g.fillText('חתימת המומחה/ית', 300, 1000);
+    g.fillStyle = '#6b5560'; g.font = '500 34px Heebo, Arial, sans-serif'; g.fillText(c.date, W - 260, 1000); g.fillText(c.sig || 'חתימת המומחה/ית', 300, 1000);
     if (exp) g.drawImage(exp, W / 2 - 80, 900, 160, 160);
-    cv.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'certificate.png'; a.click(); }, 'image/png');
+    cv.toBlob(async b => {
+      const fname = 'certificate' + (c.name ? '-' + c.name.replace(/[^\p{L}\p{N}]+/gu, '_') : '') + '.png';
+      if (share) {
+        try { const f = new File([b], fname, { type: 'image/png' }); if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], text: 'התעודה שלי ממעבדת הדם' }); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+        toast('השיתוף לא נתמך במכשיר הזה. התמונה ירדה, אפשר לשלוח אותה ידנית.');
+      }
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = fname; a.click();
+    }, 'image/png');
   });
 }
 

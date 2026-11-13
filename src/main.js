@@ -109,7 +109,7 @@ function router() {
   if (TPART && !(r === 'g' || r === BAKED)) { location.replace('#/' + BAKED); return; }
   if (r === 'g') { updateTop('a'); const g = gameById(id); $$('.nav a').forEach(a => a.classList.toggle('on', g && a.dataset.n === g.part.toLowerCase())); mountGame(id, view()); return; }
   updateTop(r);
-  if (r === 'home') home(); else if (r === 'a' || r === 'b' || r === 'c') partPage(r.toUpperCase()); else if (r === 'me') mePage(); else if (r === 'key' && IS_TEACHER) keyPage(view()); else home();
+  if (r === 'home') home(); else if (r === 'a' || r === 'b' || r === 'c') partPage(r.toUpperCase()); else if (r === 'me') mePage(); else if (r === 'key' && IS_TEACHER) keyPage(view()); else if (r === 'certs' && IS_TEACHER) certsPage(view()); else home();
 }
 document.addEventListener('click', e => { const q = e.target.closest('.qm'); if (q) { const nx = q.closest('tr').nextElementSibling; if (nx && nx.classList.contains('hrow')) { nx.hidden = !nx.hidden; q.setAttribute('aria-expanded', String(!nx.hidden)); } return; } const t = e.target.closest('[data-g]'); if (t) { location.hash = '#/g/' + t.dataset.g; } });
 window.addEventListener('hashchange', router);
