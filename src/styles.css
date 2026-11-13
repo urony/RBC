@@ -241,3 +241,19 @@ svg.chart{direction:ltr}
 .reveal .btn{margin-top:8px}
 .mission{background:var(--primary-soft);border-radius:14px;padding:10px 12px;margin-bottom:12px}
 .mission h3{margin:0 0 6px}
+
+/* labels over figures */
+.figwrap{position:relative}
+.figlb{position:absolute;transform:translate(-50%,-50%);background:rgba(255,255,255,.9);border:1px solid var(--line);border-radius:8px;padding:2px 7px;font-size:.72rem;font-weight:700;color:var(--ink);text-align:center;line-height:1.2;max-width:44%;pointer-events:none}
+.figrow{display:grid;grid-template-columns:repeat(4,1fr);direction:ltr;text-align:center;gap:2px;padding:6px 6px 0}
+.figrow div{display:flex;flex-direction:column;gap:2px}
+.figrow b{font-size:1.05rem}
+.figrow span{font-size:.68rem;color:var(--muted);line-height:1.25;direction:rtl}
+.figleg{padding:6px 14px 0;font-size:.82rem}
+.figleg ol{margin:4px 0 6px;padding-inline-start:20px}
+
+/* answer key + print */
+.kq{margin:10px 0;padding-inline-start:22px}
+.kq li{margin:10px 0}
+.kans{color:var(--ok,#1a7f4b);font-weight:700;margin-top:2px}
+@media print{.topbar,.nav,.noprint,.toast{display:none!important}body{background:#fff!important}.card{box-shadow:none!important;break-inside:avoid}}

@@ -64,7 +64,7 @@ registerGame({
           { t: 'כדי שהיא תפיק אנרגיה מחמצן ביעילות רבה יותר', why: 'להפך: המיטוכונדריה היא האברון שצורך חמצן להפקת אנרגיה.' },
           { t: 'כי התא אינו זקוק לאנרגיה כלל', why: 'היא זקוקה לאנרגיה לשמירת הצורה והגמישות, ומפיקה אותה בגליקוליזה.' },
           { t: 'כדי להקטין את התא בלבד, בלי קשר לחמצן', why: 'ההסבר הוא מניעת צריכת חמצן עצמית.' }] },
-        { q: 'קוטר כדורית כ-7.5 מיקרון, וקוטר נימים לעיתים פחות מ-3 מיקרון. מה מאפשר לה לעבור?', tag: 'struct_func', fig: 'rbc_structure', figCap: 'מבנה כדורית הדם האדומה (איור מהספר)', options: [
+        { q: 'קוטר כדורית כ-7.5 מיקרון, וקוטר נימים לעיתים פחות מ-3 מיקרון. מה מאפשר לה לעבור?', tag: 'struct_func', fig: 'rbc_structure', figCap: 'מבנה כדורית הדם האדומה', options: [
           { t: 'גמישות: התא מתכופף ומשנה צורה בלי להיקרע', ok: true, why: 'הגמישות נובעת משלד הממברנה ומהיעדר גרעין.' },
           { t: 'התא מתכווץ לגודל של 3 מיקרון ומתרחב שוב אחרי הנימים', why: 'התא משנה צורה, לא נפח.' },
           { t: 'הלחץ בכלי הדם דוחף אותו בכוח, גם כשהוא קשיח', why: 'תא קשיח נתקע, ולכן הגמישות חיונית.' },
@@ -113,7 +113,7 @@ registerGame({
         <div class="kpi"><div><b>${Math.round(cur * 100)}%</b><span>רוויה בלחץ שנבחר</span></div><div><b>${Math.round(sL * 100)}%</b><span>רוויה בריאות</span></div><div><b>${Math.round(sT * 100)}%</b><span>רוויה ברקמות</span></div></div>
         <div class="kpi"><div><b>${cL.toFixed(1)}</b><span>חמצן בדם (מ"ל/ד"ל) – ריאות</span></div><div><b>${cT.toFixed(1)}</b><span>חמצן בדם – רקמות</span></div><div class="${(cL - cT) < 3.5 ? 'L' : ''}"><b>${(cL - cT).toFixed(1)}</b><span>חמצן שנמסר לרקמות</span></div></div>
         <div class="explain">${S.hb < 11 && S.co === 0 ? '💡 שימו לב: ברמת המוגלובין נמוכה הרוויה נשארת גבוהה, אבל הכמות הכוללת של חמצן שהדם נושא קטנה! אנמיה פוגעת בקיבולת ההובלה, לא באחוז הרוויה.' : S.co >= 20 ? '☠️ CO נקשר להמוגלובין חזק פי 200 מחמצן, תופס מקום ומקשה גם על שחרור החמצן – לכן כמות החמצן שנמסרת צונחת.' : 'נסו להוריד את ההמוגלובין או להוסיף CO ולראות את החמצן שנמסר לרקמות.'}</div>
-        ${fig('o2_delivery', 'העברת חמצן בריאות וברקמות (איור מהספר)')}`;
+        ${fig('o2_delivery', 'העברת חמצן בריאות וברקמות')}`;
       $$('input[type=range]', card).forEach(r => r.oninput = () => { S[r.dataset.k] = +r.value; const y = window.scrollY; draw(); window.scrollTo(0, y); const nr = $(`input[data-k=${r.dataset.k}]`, card); nr && nr.focus(); });
     }
     draw();
@@ -129,7 +129,7 @@ registerGame({
         { t: 'הוא מפרק את ההמוגלובין ומונע ייצור כדוריות חדשות', why: 'הבעיה היא תפיסת אתרי הקישור, לא פירוק.' },
         { t: 'הוא מגביר את צריכת החמצן ברקמות מעבר ליכולת הדם', why: 'הצריכה לא משתנה; ההובלה היא שנפגעת.' },
         { t: 'הוא הורס את קרום הכדורית ומחסל את התאים בדקות', why: 'הכדוריות נשארות שלמות אך "תפוסות".' }] },
-      { q: 'כמה מולקולות חמצן יכולה לשאת מולקולת המוגלובין אחת, ולמה?', tag: 'o2_transport', fig: 'hemoglobin', figCap: 'מבנה ההמוגלובין (איור מהספר)', options: [
+      { q: 'כמה מולקולות חמצן יכולה לשאת מולקולת המוגלובין אחת, ולמה?', tag: 'o2_transport', fig: 'hemoglobin', figCap: 'מבנה ההמוגלובין', options: [
         { t: 'עד ארבע: יש בה ארבע קבוצות הֶם, ובכל אחת אטום ברזל', ok: true, why: 'אטום הברזל בהֶם הוא האתר הפעיל לקישור חמצן.' },
         { t: 'אחת, כי יש במולקולה אטום ברזל אחד בלבד', why: 'יש ארבע קבוצות הֶם.' },
         { t: 'שתיים, כי היא בנויה משתי שרשראות בלבד', why: 'היא בנויה מארבע תת-יחידות, כל אחת עם הֶם.' },
@@ -229,6 +229,7 @@ registerGame({
     }
     root.insertAdjacentHTML('afterbegin', say('אני הכליה, ואני מחליטה כמה EPO לשלוח. בכל תרחיש נבאו קודם – ורק אז תראו מה קורה. 🔮', 'wink', 'kidney'));
     root.appendChild(el(fig('epo', 'משוב שלילי של EPO (איור מהספר)').replace('<figure', '<figure style="margin-top:0"')));
+    root.appendChild(el(`<details class="card" style="padding:10px 14px"><summary><b>🔄 איורים: מחזור החיים והתהוות הכדורית</b></summary>${fig('lifecycle', 'מחזור החיים של הכדורית')}${fig('erythropoiesis', 'התהוות הכדורית (אריתרופואזה)')}</details>`));
     round();
   },
 });
@@ -255,7 +256,7 @@ registerGame({
     ];
     root.insertAdjacentHTML('afterbegin', say('כל כדורית עוברת אצלי בדיקת תוקף: 120 יום ויציאה. אבל היא לא נזרקת – ממחזרים! סדרו את המסע שלה.', 'wink', 'spleen'));
     let ord = 0;
-    orderGame(root, { steps, onDone: p => { ord = p; root.innerHTML = ''; root.insertAdjacentHTML('afterbegin', fig('bili', 'מסלול הבילירובין (איור מהספר)')); quiz(); } });
+    orderGame(root, { steps, onDone: p => { ord = p; root.innerHTML = ''; root.insertAdjacentHTML('afterbegin', fig('bili', 'מסלול הבילירובין')); quiz(); } });
     function quiz() {
       const wrap = { ...ctx, finish: (p, ex) => ctx.finish(Math.round((ord + p) / 2), ex) };
       runQuiz(root, wrap, [

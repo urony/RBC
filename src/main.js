@@ -84,7 +84,10 @@ function mePage() {
     <button class="btn block" id="shr">📤 שליחת התוצאות למורה</button>
     <div class="card" style="margin-top:14px"><h3>מראה</h3><div class="seg"><button data-th="auto">אוטומטי</button><button data-th="light">בהיר</button><button data-th="dark">כהה</button></div></div>
     <button class="btn ghost block" id="rs">🗑️ איפוס כל הנתונים במכשיר</button>
-    <p class="small muted center" style="margin-top:14px">הנתונים שלכם נשמרים רק בדפדפן במכשיר הזה.</p>`;
+    <p class="small muted center" style="margin-top:14px">הנתונים שלכם נשמרים רק בדפדפן במכשיר הזה.</p>
+    ${IS_TEACHER ? `<div class="card" style="margin-top:14px"><h3>🎓 מצב מורה פעיל</h3><div class="row"><a class="btn primary grow" href="#/t">לדף המורה</a><button class="btn grow" id="tx">יציאה ממצב מורה</button></div></div>` : `<details class="card" style="margin-top:14px"><summary class="small muted">🎓 כניסת מורה</summary><div class="row" style="margin-top:8px"><input type="password" id="tk" placeholder="מילת הסוד של המורה" style="flex:1"><button class="btn sm" id="tl">כניסה</button></div></details>`}`;
+  const tl = $('#tl'); if (tl) tl.onclick = () => { if ($('#tk').value.trim() === CFG.TEACHER_KEY) { try { localStorage.setItem(TLS, '1'); } catch (e) { } location.replace(location.pathname + '#/t'); location.reload(); } else toast('מילה שגויה'); };
+  const tx = $('#tx'); if (tx) tx.onclick = () => { try { localStorage.removeItem(TLS); } catch (e) { } location.replace(location.pathname + '#/me'); location.reload(); };
   $('#sv').onclick = () => { Store.setName($('#nm').value, $('#cl').value); toast('נשמר ✅'); updateTop('me'); };
   $('#shr').onclick = () => { if (!Store.d.name) { toast('הוסיפו קודם שם'); return; } shareResultsModal(); };
   $('#rs').onclick = () => { if (confirm('למחוק את השם, הציונים וההתקדמות במכשיר הזה?')) { Store.reset(); mePage(); updateTop('me'); } };
@@ -97,7 +100,7 @@ function router() {
   if (LOCK) { const ap = allowedParts(), okG = r === 'g' && gameById(id) && gameAllowed(gameById(id)); if (!(r === 'me' || okG || ap.includes(r))) { location.replace('#/' + ap[0]); return; } }
   if (r === 'g') { updateTop('a'); const g = gameById(id); $$('.nav a').forEach(a => a.classList.toggle('on', g && a.dataset.n === g.part.toLowerCase())); mountGame(id, view()); return; }
   updateTop(r);
-  if (r === 'home') home(); else if (r === 'a' || r === 'b' || r === 'c') partPage(r.toUpperCase()); else if (r === 'me') mePage(); else if (r === 't' && IS_TEACHER) teacherPage(view()); else home();
+  if (r === 'home') home(); else if (r === 'a' || r === 'b' || r === 'c') partPage(r.toUpperCase()); else if (r === 'me') mePage(); else if (r === 't' && IS_TEACHER) teacherPage(view()); else if (r === 'key' && IS_TEACHER) keyPage(view()); else home();
 }
 document.addEventListener('click', e => { const t = e.target.closest('[data-g]'); if (t) { location.hash = '#/g/' + t.dataset.g; } });
 window.addEventListener('hashchange', router);

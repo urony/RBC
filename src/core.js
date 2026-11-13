@@ -7,9 +7,12 @@ const CFG = {
   TITLE: 'מעבדת הדם',
 };
 const QS = new URLSearchParams(location.search);
-const IS_TEACHER = QS.get('t') === CFG.TEACHER_KEY;
+const TLS = 'hemolab_teacher_on';   // כניסת מורה שנשמרת במכשיר (בלי צורך בקישור)
+let TLOG = false; try { TLOG = localStorage.getItem(TLS) === '1'; } catch (e) { }
+const IS_TEACHER = QS.get('t') === CFG.TEACHER_KEY || TLOG;
+const BAKED = (typeof BAKED_ONLY !== 'undefined') ? BAKED_ONLY : '';   // קובץ נפרד: נעול לחלק/משחק כבר בבנייה
 // נעילה לחלק/משחק מסוים: ?only=a  |  ?only=a,b  |  ?only=b_l1 (לא חל על מצב מורה)
-const ONLY = IS_TEACHER ? [] : (QS.get('only') || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
+const ONLY = IS_TEACHER ? [] : (QS.get('only') || BAKED).toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
 const LOCK = ONLY.length > 0;
 const IMG = (typeof IMG_DATA !== 'undefined') ? IMG_DATA : {};
 const ART = (typeof ART_DATA !== 'undefined') ? ART_DATA : {};
@@ -80,9 +83,26 @@ function lightbox(src) {
 }
 document.addEventListener('click', e => { const im = e.target.closest('.fig img'); if (im) lightbox(im.src); });
 
+/* תוויות עבריות מעל/מתחת לאיורים חדשים: x,y באחוזים; row = שורת עמודות מתחת; legend = רשימה ממוספרת */
+const FIGX = {
+  rbc_structure: { labels: [['מבט צד (חתך)', 27, 11], ['מבט מלמעלה', 75, 11], ['עובי כ-2.5 מיקרון', 27, 89], ['קוטר כ-7.5 מיקרון', 75, 89]] },
+  hemoglobin: { labels: [['המוגלובין: 4 שרשראות, בכל אחת הֶם', 28, 7], ['קבוצת הֶם: ברזל במרכז', 78, 7]] },
+  mega_cbc: { labels: [['כדורית מקרוציטית', 84, 51], ['נויטרופיל היפר-סגמנטי', 84, 73]], note: 'מד שמאלי: המוגלובין נמוך. מד ימני: MCV גבוה.' },
+  abo: { row: [['A', 'אנטיגן A · נוגדנים anti-B'], ['B', 'אנטיגן B · נוגדנים anti-A'], ['AB', 'שני האנטיגנים · אין נוגדנים'], ['O', 'אין אנטיגנים · anti-A ו-anti-B']] },
+  bili: { legend: ['מקרופאג מפרק כדורית ישנה', 'בדם: בילירובין לא ישיר, קשור לאלבומין', 'בכבד הופך לבילירובין ישיר (מסיס)', 'מרה זורמת למעי; חיידקים יוצרים אורובילינוגן', 'חלק יוצא בשתן (צהוב), רוב בצואה (חום)'] },
+  b12abs: { legend: ['בקיבה: תאים פריאטליים מפרישים פקטור פנימי', 'B12 נקשר לפקטור הפנימי', 'הקומפלקס עובר במעי הדק', 'בקצה המעי הדק קולטנים קולטים את הקומפלקס', 'B12 נכנס לדם'] },
+  o2_delivery: { legend: ['בריאה: חמצן עובר מהנאדיות להמוגלובין בכדוריות', 'ברקמות: ההמוגלובין מוסר חמצן לתאים'] },
+  rh: { legend: ['אם Rh שלילית, עובר Rh חיובי', 'בלידה דם העובר נכנס לדם האם', 'האם מייצרת נוגדנים אנטי-D', 'בהיריון הבא הנוגדנים פוגעים בכדוריות העובר', 'מניעה: זריקת אנטי-D'], lead: 'משמאל לימין:' },
+  lifecycle: { legend: ['מח העצם מייצר כדוריות', 'הכדוריות בדם; הכליה מזהה חמצן נמוך ומפרישה EPO', 'אחרי כ-120 יום הטחול והכבד מפרקים אותן', 'הברזל והבילירובין ממוחזרים וחוזרים למח העצם'] },
+  erythropoiesis: { legend: ['תא גזע', 'פרואריתרובלסט', 'אריתרובלסט פולי-כרומטופילי', 'אריתרובלסט אורתו-כרומטי (הגרעין נפלט)', 'רטיקולוציט', 'כדורית בוגרת'], lead: 'משמאל לימין:' },
+};
 function fig(name, cap) {
-  const src = IMG[name] || ('assets/' + name + '.webp');
-  return `<figure class="fig"><img loading="lazy" src="${src}" alt="${esc(cap || name)}"><figcaption>${esc(cap || '')} · לחיצה להגדלה</figcaption></figure>`;
+  const src = IMG[name] || ('assets/' + name + '.webp'), X = FIGX[name];
+  const labels = X && X.labels ? X.labels.map(l => `<span class="figlb" style="left:${l[1]}%;top:${l[2]}%">${l[0]}</span>`).join('') : '';
+  const row = X && X.row ? `<div class="figrow">${X.row.map(r => `<div><b>${r[0]}</b><span>${r[1]}</span></div>`).join('')}</div>` : '';
+  const legend = X && X.legend ? `<div class="figleg">${X.lead ? `<span class="muted small">${X.lead}</span>` : ''}<ol>${X.legend.map(t => `<li>${t}</li>`).join('')}</ol></div>` : '';
+  const note = X && X.note ? `<div class="figleg small muted">${X.note}</div>` : '';
+  return `<figure class="fig"><div class="figwrap"><img loading="lazy" src="${src}" alt="${esc(cap || name)}">${labels}</div>${row}${legend}${note}<figcaption>${esc(cap || '')} · לחיצה להגדלה</figcaption></figure>`;
 }
 
 function mascotSVG(mood = 'happy') {

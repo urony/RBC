@@ -2,7 +2,9 @@
 /* ===== חלק ב׳ – אבחון לפי בדיקות דם ===== */
 const PANEL_NAMES = { cbc: 'ספירת דם (CBC)', retic: 'רטיקולוציטים', iron: 'פרופיל ברזל', vit: 'ויטמינים', hemo: 'סמני המוליזה', infl: 'מדדי דלקת', kidney: 'תפקודי כליה' };
 const NEXT_OK = { ida: ['iron'], acd: ['iron', 'infl'], b12: ['vit'], folate: ['vit'], aiha: ['hemo'], g6pd: ['hemo'], aplastic: ['marrow'] };
-const NEXT_OPTS = { iron: 'פרופיל ברזל (פריטין, ברזל, טרנספרין)', vit: 'ויטמין B12 וחומצה פולית', hemo: 'סמני המוליזה (בילירובין, LDH, הפטוגלובין)', marrow: 'ביופסיית מח עצם', infl: 'CRP ושקיעת דם' };
+const NEXT_OPTS = { iron: 'פרופיל ברזל: פריטין וטרנספרין', vit: 'ויטמין B12 וחומצה פולית', hemo: 'סמני המוליזה: LDH ובילירובין', marrow: 'ביופסיית מח עצם', infl: 'סמני דלקת: CRP ושקיעת דם' };
+const NEXT_WHY = { iron: 'מתאימה כשה-MCV נמוך, כדי להבדיל בין חוסר ברזל למחלה כרונית.', vit: 'מתאימה כשה-MCV גבוה, כדי לבדוק חוסר B12 או פולית.', hemo: 'מתאימה כשהרטיקולוציטים גבוהים, כדי לאשר המוליזה.', marrow: 'שמורה לפנציטופניה עם רטיקולוציטים נמוכים מאוד, ולא נעשית בשלב ראשון.', infl: 'CRP לבדו לא מאבחן אנמיה. הוא משלים רק כשיש חשד למחלה כרונית.' };
+const CATOPT = k => `${ANEMIA_CATS[k].ic} ${k === 'mega' ? 'אנמיה מגלובלסטית' : ANEMIA_CATS[k].n}`;
 
 function makePatient(type, edge) {
   const sex = type === 'g6pd' ? 'M' : type === 'ida' ? (Math.random() < .75 ? 'F' : 'M') : Math.random() < .5 ? 'F' : 'M';
@@ -38,7 +40,7 @@ function runLabRounds(root, ctx, mode, types) {
     let pts = 0; const finish = (dxPts) => { score += dxPts; const nx = el(`<button class="btn primary block" style="margin:12px 0">${i + 1 >= types.length ? 'לסיכום 🏁' : 'מטופל הבא ←'}</button>`); nx.onclick = () => { i++; patientRound(); }; fb.appendChild(nx); nx.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
 
     function dxStep(nextPts = 0, weightDx = 1) {
-      const opts = Object.keys(ANEMIA_CATS).map(k => ({ t: `${ANEMIA_CATS[k].ic} ${ANEMIA_CATS[k].n}`, ok: k === p.cat, tag: CAT_TAG[k], _k: k }));
+      const opts = Object.keys(ANEMIA_CATS).map(k => ({ t: CATOPT(k), ok: k === p.cat, tag: CAT_TAG[k], _k: k }));
       mcq(q, { q: 'מהי האנמיה?', tag: CAT_TAG[p.cat], options: opts, onDone: (ok, o) => {
         fb.innerHTML = feedbackDx(p, o._k);
         const sub = SUBDX[p.cat];
@@ -56,7 +58,7 @@ function runLabRounds(root, ctx, mode, types) {
         `<div class="card flat" style="padding:12px"><h3>משטח דם <span class="pill">איור סכמטי</span></h3><div class="smear">${smearSVG(p.smear, Math.floor(Math.random() * 9999))}</div><p class="muted small" style="margin:8px 0 0">${SMEAR_DESC[p.smear]}</p></div>`;
       const mcv = p.vals.MCV, cls = mcv < 80 ? 0 : mcv > 100 ? 2 : 1;
       mcq(q, { q: 'שלב 1: לפי ה-MCV, איזה סוג אנמיה זה?', tag: 'mcv_class', options: [{ t: 'מיקרוציטית (תאים קטנים)', ok: cls === 0, why: `MCV ${mcv} fL (תקין 80–100)` }, { t: 'נורמוציטית (גודל תקין)', ok: cls === 1, why: `MCV ${mcv} fL (תקין 80–100)` }, { t: 'מאקרוציטית (תאים גדולים)', ok: cls === 2, why: `MCV ${mcv} fL (תקין 80–100)` }], shuffle: false, onDone: () => { const q2 = el('<div></div>'); q.appendChild(el('<hr style="border:0;border-top:1px solid var(--line);margin:16px 0">')); q.appendChild(q2); dxStepIn(q2); } });
-      function dxStepIn(box) { const old = q; const tmp = q; /* מציג את שלב 2 בתוך אותו כרטיס */ const opts = Object.keys(ANEMIA_CATS).map(k => ({ t: `${ANEMIA_CATS[k].ic} ${ANEMIA_CATS[k].n}`, ok: k === p.cat, tag: CAT_TAG[k], _k: k }));
+      function dxStepIn(box) { const old = q; const tmp = q; /* מציג את שלב 2 בתוך אותו כרטיס */ const opts = Object.keys(ANEMIA_CATS).map(k => ({ t: CATOPT(k), ok: k === p.cat, tag: CAT_TAG[k], _k: k }));
         mcq(box, { q: 'שלב 2: מהי האנמיה?', tag: CAT_TAG[p.cat], options: opts, onDone: (ok, o) => { fb.innerHTML = feedbackDx(p, o._k); const sub = SUBDX[p.cat];
           if (ok && sub) { const q3 = el('<div class="card" style="margin-top:10px"></div>'); fb.appendChild(q3); const correct = sub.ok(p.cat === 'mega' ? p.vals : p), keys = Object.keys(sub.opts); mcq(q3, { q: sub.q, tag: 'sub_dx', options: keys.map(k => ({ t: sub.opts[k][0], ok: k === correct, why: sub.opts[k][1] })), onDone: ok2 => finish(0.7 + 0.3 * (ok2 ? 1 : 0)) }); } else finish(ok ? 1 : 0); } }); }
     } else if (mode === 2) {
@@ -67,7 +69,7 @@ function runLabRounds(root, ctx, mode, types) {
     } else {
       labs.innerHTML = panelCard(p, PANEL.cbc, 'ספירת דם מלאה') + panelCard(p, PANEL.retic, 'רטיקולוציטים');
       const ok = NEXT_OK[type];
-      mcq(q, { q: 'מה הבדיקה הבאה שתבקשו – זו שתקדם הכי הרבה את האבחנה?', tag: 'next_test', options: Object.keys(NEXT_OPTS).map(k => ({ t: NEXT_OPTS[k], ok: ok.includes(k), why: ok.includes(k) ? '' : 'פחות מועיל בשלב זה לפי דפוס ה-CBC והרטיקולוציטים.', _k: k })), onDone: (okN, o) => {
+      mcq(q, { q: 'מה הבדיקה הבאה שתבקשו – זו שתקדם הכי הרבה את האבחנה?', tag: 'next_test', options: Object.keys(NEXT_OPTS).map(k => ({ t: NEXT_OPTS[k], ok: ok.includes(k), why: ok.includes(k) ? NEXT_WHY[k] : NEXT_WHY[k], _k: k })), onDone: (okN, o) => {
         const best = ok[0]; const keysOf = { iron: PANEL.iron, vit: PANEL.vit, hemo: PANEL.hemo, infl: PANEL.infl };
         let rev = '';
         const show = k => { if (k === 'marrow') return `<div class="card flat" style="padding:12px"><h3>ביופסיית מח עצם</h3><p>${p.cat === 'aplastic' ? 'מח עצם <b>היפוצלולרי</b>: רקמת שומן במקום תאים מייצרי דם.' : 'ללא ממצא מחשיד לכשל מח עצם.'}</p></div>`; return panelCard(p, keysOf[k], PANEL_NAMES[k]); };
@@ -76,7 +78,7 @@ function runLabRounds(root, ctx, mode, types) {
         if (best === 'hemo') rev += `<div class="small muted">קומבס: <b>${p.coombs}</b></div>`;
         labs.insertAdjacentHTML('beforeend', rev);
         const q2 = el('<div class="card" style="margin-top:10px"></div>'); host.insertBefore(q2, fb);
-        const opts = Object.keys(ANEMIA_CATS).map(k => ({ t: `${ANEMIA_CATS[k].ic} ${ANEMIA_CATS[k].n}`, ok: k === p.cat, tag: CAT_TAG[k], _k: k }));
+        const opts = Object.keys(ANEMIA_CATS).map(k => ({ t: CATOPT(k), ok: k === p.cat, tag: CAT_TAG[k], _k: k }));
         mcq(q2, { q: 'ועכשיו – מהי האנמיה?', tag: CAT_TAG[p.cat], options: opts, onDone: (okD, od) => {
           fb.innerHTML = feedbackDx(p, od._k); const sub = SUBDX[p.cat]; const np = okN ? .3 : 0;
           if (okD && sub) { const q3 = el('<div class="card" style="margin-top:10px"></div>'); fb.appendChild(q3); const correct = sub.ok(p.cat === 'mega' ? p.vals : p), keys = Object.keys(sub.opts); mcq(q3, { q: sub.q, tag: 'sub_dx', options: keys.map(k => ({ t: sub.opts[k][0], ok: k === correct, why: sub.opts[k][1] })), onDone: ok2 => finish(np + .7 * (0.7 + 0.3 * (ok2 ? 1 : 0))) }); }

@@ -21,6 +21,11 @@ function teacherPage(root) {
   const perGame = allG.map(id => { const v = rows.map(r => r.g[id] ? r.g[id][0] : null).filter(x => x != null); return { id, n: v.length, avg: v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null }; });
   root.innerHTML = `<h1>🎓 מצב מורה</h1>
     ${say('כאן הפתרונות מוצגים בכל המשחקים (סימון "מפתח"), וכאן אפשר לאסוף את התוצאות של התלמידים.', 'happy')}
+    <div class="card"><h2>איך עובדים במצב מורה?</h2><ol class="small" style="padding-inline-start:20px;margin:6px 0">
+      <li>נכנסים לכל משחק כרגיל (כפתורי הניווט למטה): התשובה הנכונה מסומנת בירוק עם הסבר, ובתחתית כל משחק יש "הערה למורה".</li>
+      <li><b>רשימת כל התשובות הנכונות</b> במקום אחד: <a href="#/key"><b>📋 מפתח תשובות</b></a> (אפשר להדפיס או לשמור כקובץ).</li>
+      <li>כשמסיימים: "אני" ← "יציאה ממצב מורה". המצב נשמר במכשיר הזה בלבד.</li></ol>
+      <a class="btn primary block" href="#/key">📋 מפתח תשובות לכל המשחקים</a></div>
     <div class="card"><h2>🔗 קישורים</h2>
       <p class="small muted">קישור לתלמידים (בלי פתרונות):</p><div class="row"><input type="text" readonly value="${esc(studentLink)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(studentLink)}">העתקה</button></div>
       <p class="small muted" style="margin-top:12px">קישור למורה (עם פתרונות וטופס איסוף תוצאות):</p><div class="row"><input type="text" readonly value="${esc(teacherLink)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(teacherLink)}">העתקה</button></div>
@@ -29,6 +34,10 @@ function teacherPage(root) {
       <p class="small muted">כל קישור פותח לתלמידים רק את מה שנבחר, בלי שיראו את שאר החלקים. אפשר גם לחבר כמה חלקים: <span class="ltr">?only=a,c</span></p>
       ${[['a', '📘 חלק א׳ – חזרה אינטראקטיבית על עקרונות חשובים'], ['b', '🧪 חלק ב׳ – אבחון מבדיקות דם'], ['c', '🚑 חלק ג׳ – תורנות מיון']].map(([k, t]) => { const l = base + '?only=' + k; return `<p class="small" style="margin:12px 0 4px"><b>${t}</b></p><div class="row"><input type="text" readonly value="${esc(l)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(l)}">העתקה</button></div>`; }).join('')}
       <details style="margin-top:14px"><summary><b>קישור למשחק בודד</b></summary>${GAMES.map(g => { const l = base + '?only=' + g.id; return `<p class="small" style="margin:10px 0 4px">${g.icon} ${g.title}</p><div class="row"><input type="text" readonly value="${esc(l)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(l)}">העתקה</button></div>`; }).join('')}</details></div>
+    <div class="card"><h2>📦 קבצי HTML נפרדים לשליחה</h2>
+      <p class="small">בכל בנייה נוצרים קבצים עצמאיים (בלי קישור ובלי אינטרנט) בתיקייה <span class="ltr">anemia-tool/dist/parts</span>:</p>
+      <ul class="small" style="padding-inline-start:20px;margin:6px 0"><li><span class="ltr">part-A.html</span> · <span class="ltr">part-B.html</span> · <span class="ltr">part-C.html</span> – חלק שלם</li><li><span class="ltr">game-&lt;מזהה&gt;.html</span> – משחק בודד (למשל <span class="ltr">game-a_epo.html</span>)</li></ul>
+      <p class="small muted">שולחים את הקובץ בוואטסאפ או במייל, והתלמיד פותח אותו בדפדפן. באנדרואיד זה עובד טוב; באייפון פתיחת קובץ HTML מהוואטסאפ לא תמיד עובדת, ושם עדיף קישור. אחרי כל עדכון של הכלי צריך לשלוח את הקובץ מחדש.</p></div>
     <div class="card"><h2>📥 איסוף תוצאות תלמידים</h2>
       <p class="small muted">כל תלמיד לוחץ על "שליחת תוצאות" ומעביר לכם קוד שמתחיל ב-HL1. הדביקו כאן קוד אחד או כמה (מופרדים בשורות).</p>
       <textarea id="paste" placeholder="הדביקו כאן קודים…" style="direction:ltr"></textarea>
@@ -57,4 +66,77 @@ function teacherPage(root) {
     modal(`<h2>${esc(r.n)} ${r.c ? '· ' + esc(r.c) : ''}</h2><p class="small muted">נשלח: ${new Date(r.t).toLocaleString('he-IL')}</p>${Object.keys(r.g).map(id => `<div class="meter"><div class="nm small">${GAME_TITLE(id)}</div><div class="bar"><i style="width:${r.g[id][0]}%"></i></div><b class="small" style="width:44px;text-align:end">${r.g[id][0]}%</b></div>`).join('') || '<p class="muted">אין משחקים.</p>'}
       <h3 style="margin-top:14px">טעויות נפוצות</h3>${Object.entries(r.m || {}).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k, n]) => `<div class="row sp small" style="margin:4px 0"><span>${TAGS[k] || k}</span><span class="pill r">${n}</span></div>`).join('') || '<p class="muted small">אין.</p>'}`);
   });
+}
+
+
+/* ===== מפתח תשובות: נאסף אוטומטית מהמשחקים (חלק א׳) + סיכום לחלקים ב׳ וג׳ ===== */
+/* חילוץ שאלות שמוסתרות מאחורי שלבי משחק: קוראים את מערכי השאלות מקוד הפונקציה עצמה */
+function litEnd(src, start) {
+  let d = 0, q = null;
+  for (let i = start; i < src.length; i++) {
+    const c = src[i];
+    if (q) { if (c === '\\') i++; else if (c === q) q = null; }
+    else if (c === "'" || c === '"' || c === '`') q = c;
+    else if (c === '[' || c === '{' || c === '(') d++;
+    else if (c === ']' || c === '}' || c === ')') { d--; if (d === 0) return i + 1; }
+  }
+  return -1;
+}
+function litItems(src) {
+  const out = [], re = /runQuiz\(\s*\w+\s*,\s*\w+\s*,\s*\[/g; let m;
+  while ((m = re.exec(src))) {
+    const st = m.index + m[0].length - 1, en = litEnd(src, st);
+    if (en < 0) continue;
+    try { const arr = new Function('fig', 'return ' + src.slice(st, en))(fig); arr.forEach(x => out.push(x)); } catch (e) { }
+  }
+  return out;
+}
+function collectKey() {
+  const names = ['runQuiz', 'mcq', 'orderGame', 'binGame', 'matchGame', 'sortGame'];
+  const saved = {}; names.forEach(n => saved[n] = window[n]);
+  const res = []; let cur = null;
+  const dummy = () => document.createElement('div');
+  const go = fn => { try { fn(); } catch (e) { } };
+  window.runQuiz = (root, ctx, items) => { items.forEach(it => cur.q.push(it)); };
+  window.mcq = (p, spec) => { cur.q.push(spec); return dummy(); };
+  window.orderGame = (r, o) => { cur.o.push(o.steps); go(() => o.onDone && o.onDone(100)); };
+  window.binGame = (r, o) => { cur.b.push(o); go(() => o.onDone && o.onDone(100)); };
+  window.sortGame = (r, o) => { cur.b.push(o); go(() => o.onDone && o.onDone(100)); };
+  window.matchGame = (r, o) => { cur.m.push(o.pairs); go(() => o.onDone && o.onDone(100)); };
+  GAMES.filter(g => g.part === 'A').forEach(g => {
+    cur = { g, q: [], o: [], b: [], m: [] };
+    const root = dummy();
+    go(() => g.mount(root, { game: g, root, teacher: true, finish() { } }));
+    go(() => litItems(g.mount.toString()).forEach(it => { if (!cur.q.some(x => x.q === it.q)) cur.q.push(it); }));
+    res.push(cur);
+  });
+  names.forEach(n => window[n] = saved[n]);
+  return res;
+}
+function keyHTML() {
+  const data = collectKey();
+  const qli = it => { const r = it.options.filter(o => o.ok); return `<li><div>${it.q}</div><div class="kans">✔ ${r.map(o => o.t).join(' ; ')}</div>${r[0] && r[0].why ? `<div class="small muted">${r[0].why}</div>` : ''}</li>`; };
+  let h = '<h1>📋 מפתח תשובות</h1><p class="small muted">חלק א׳ נאסף אוטומטית מהמשחקים (כך שהוא תמיד מעודכן). בחלק ב׳ המטופלים נוצרים אקראית בכל פעם, ולכן מופיעים כאן הכללים והדפוסים; בחלק ג׳ מופיעים כל המקרים.</p>';
+  h += '<h2>📘 חלק א׳</h2>';
+  data.forEach(d => {
+    h += `<div class="card"><h3>${d.g.icon} ${d.g.title}</h3>${d.g.teacherNote ? `<p class="small"><b>הערה למורה:</b> ${d.g.teacherNote}</p>` : ''}`;
+    d.b.forEach(b => { h += `<p class="small"><b>מיון:</b></p><ul class="small">${b.buckets.map((bk, k) => `<li><b>${bk}:</b> ${b.items.filter(i => i.b === k).map(i => i.t).join(' · ')}</li>`).join('')}</ul>`; });
+    d.o.forEach(st => { h += `<p class="small"><b>סדר נכון:</b></p><ol class="small">${st.map(x => `<li>${x}</li>`).join('')}</ol>`; });
+    d.m.forEach(pr => { h += `<p class="small"><b>התאמות:</b></p><ul class="small">${pr.map(p => `<li>${p[0]} ← ${p[1]}</li>`).join('')}</ul>`; });
+    if (d.q.length) h += `<p class="small"><b>שאלות (${d.q.length}):</b></p><ol class="kq small">${d.q.map(qli).join('')}</ol>`;
+    h += '</div>';
+  });
+  h += '<h2>🧪 חלק ב׳: כללי האבחון</h2>';
+  Object.keys(ANEMIA_CATS).forEach(k => { const di = DX_INFO[k]; if (!di) return; h += `<div class="card"><h3>${ANEMIA_CATS[k].ic} ${ANEMIA_CATS[k].n}</h3>${di.need ? `<p class="small"><b>נדרש לאבחון:</b> ${di.need}</p>` : ''}<ul class="small">${(di.pts || []).map(x => `<li>${x}</li>`).join('')}</ul></div>`; });
+  h += '<h2>🚑 חלק ג׳: כל המקרים</h2>';
+  CASES.forEach(c => { h += `<div class="card"><h3>${c.emoji} ${c.name}, ${c.age} – ${DXOPT[c.dx]} ${c.urgent ? '🚨' : ''}</h3><p class="small"><b>תלונה:</b> ${c.cc}</p><p class="small"><b>בדיקות חיוניות:</b> ${c.must.map(k => TESTS[k].n).join(', ')}</p><p class="small"><b>טיפול נכון:</b> ${c.tx.find(x => x.ok).t}</p><p class="small"><b>נקודת לימוד:</b> ${c.teach}</p></div>`; });
+  return h;
+}
+function keyPage(root) {
+  root.innerHTML = `<div class="row noprint" style="margin-bottom:10px"><a class="btn sm" href="#/t">→ חזרה</a><button class="btn sm primary grow" id="kp">🖨️ הדפסה / PDF</button><button class="btn sm grow" id="kd">⬇️ שמירה כקובץ</button></div><div id="kbody">${keyHTML()}</div>`;
+  $('#kp', root).onclick = () => window.print();
+  $('#kd', root).onclick = () => {
+    const doc = `<!doctype html><html lang="he" dir="rtl"><meta charset="utf-8"><title>מפתח תשובות</title><body style="font-family:Arial,sans-serif;max-width:800px;margin:auto;padding:16px;line-height:1.5">${$('#kbody', root).innerHTML}</body></html>`;
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([doc], { type: 'text/html;charset=utf-8' })); a.download = 'answer-key.html'; a.click();
+  };
 }
