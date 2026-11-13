@@ -24,7 +24,8 @@ function teacherPage(root) {
   root.innerHTML = `<h1>🎓 דף מורה</h1>
     ${say('כל התשובות כאן פתוחות מראש: בוחרים משחק ורואים את הפתרון המלא, בלי ללחוץ על כלום. במטופלים עוברים בין 1, 2, 3 וכן הלאה.', 'happy')}
     <div class="card" style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn primary grow" href="#/key">📋 מפתח תשובות מלא (להדפסה)</a><a class="btn grow" href="#results">📥 תוצאות תלמידים</a><a class="btn grow" href="#/certs">🎓 מחולל תעודות</a></div>
-    ${['A', 'B', 'C'].map(partCard).join('')}
+    ${['A', 'B', 'C'].map(partCard).join('')}    ${studentLinksCard()}
+
     <div class="card" id="results"><h2>📥 איסוף תוצאות תלמידים</h2>
       <p class="small muted">כל תלמיד לוחץ על "שליחת תוצאות" ומעביר לכם קוד שמתחיל ב-HL1. הדביקו כאן קוד אחד או כמה (מופרדים בשורות).</p>
       <textarea id="paste" placeholder="הדביקו כאן קודים…" style="direction:ltr"></textarea>
@@ -267,4 +268,13 @@ function certsPage(root) {
   $('#cprintall', root).onclick = () => printCerts(names().map(build));
   $('#cpng1', root).onclick = () => { const n = names(); certPng(build(n[D.sel])); };
   refresh();
+}
+
+/* ===== קישורים לתלמידים: מהדף הזה המורה מעתיק קישור לכל הכלי, לחלק או למשחק בודד ===== */
+function studentUrl(rel) { try { return new URL(STUDENT_BASE + rel, location.href).href; } catch (e) { return STUDENT_BASE + rel; } }
+function studentLinksCard() {
+  const row = (label, rel) => `<div class="row" style="gap:6px;margin:6px 0;align-items:center"><span class="small" style="flex:0 0 38%">${label}</span><input type="text" readonly value="${esc(studentUrl(rel))}" style="direction:ltr;flex:1;min-width:0"><button class="btn sm" data-cp="${esc(studentUrl(rel))}">העתקה</button><a class="btn sm" href="${esc(studentUrl(rel))}" target="_blank" rel="noopener">פתיחה</a></div>`;
+  return `<div class="card" id="slinks"><h2>🔗 קישורים לתלמידים</h2><p class="small muted" style="margin-top:0">קישורים לגרסת התלמיד (בלי תשובות ובלי כניסת מורה). מעתיקים ושולחים.</p>
+    ${row('🧬 הכלי כולו', 'index.html')}${['A', 'B', 'C'].map(p => row(PART_ICON[p] + ' חלק ' + PARTS[p].l + ' כולו', 'parts/part-' + p + '.html')).join('')}
+    <details style="margin-top:8px"><summary><b>משחק בודד</b></summary>${GAMES.map(g => row(g.icon + ' ' + g.title.split(':')[0], 'parts/game-' + g.id + '.html')).join('')}</details></div>`;
 }

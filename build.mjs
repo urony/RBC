@@ -23,7 +23,7 @@ const js = order.map(n => `/* ---- ${n}.js ---- */\n` + read(`src/${n}.js`)).joi
 const css = read('src/styles.css');
 const imgAll = folderToMap('assets'), artAll = folderToMap('art');
 
-function makeHtml(img, art, baked, teacher) {
+function makeHtml(img, art, baked, teacher, sbase = '') {
   return `<!doctype html>
 <html lang="he" dir="rtl">
 <head>
@@ -36,7 +36,7 @@ function makeHtml(img, art, baked, teacher) {
 <style>${css}</style>
 </head>
 <body><noscript>הכלי דורש JavaScript.</noscript>
-<script>${teacher ? 'const TEACHER_BUILD=true;' : ''}const IMG_DATA=${JSON.stringify(img)};const ART_DATA=${JSON.stringify(art)};${baked ? `const BAKED_ONLY=${JSON.stringify(baked)};` : ''}</script>
+<script>${teacher ? 'const TEACHER_BUILD=true;const STUDENT_BASE=' + JSON.stringify(sbase) + ';' : ''}const IMG_DATA=${JSON.stringify(img)};const ART_DATA=${JSON.stringify(art)};${baked ? `const BAKED_ONLY=${JSON.stringify(baked)};` : ''}</script>
 <script>
 ${js}
 </script>
@@ -80,3 +80,11 @@ for (const p of ['a', 'b', 'c']) {
 }
 console.log('built dist/teacher.html +', tn, 'teacher game files');
 console.log('built dist/parts:', n, 'files,', Math.round(tot / 1048576) + ' MB total | games:', ids.a.length + ids.b.length + ids.c.length);
+
+/* ===== site/: מה שמתפרסם. index.html = דף המורה; s/ = קבצי התלמיד שהמורה מחלק ממנו ===== */
+const sdir = path.join(root, 'site'); fs.rmSync(sdir, { recursive: true, force: true }); fs.mkdirSync(path.join(sdir, 's/parts'), { recursive: true });
+fs.writeFileSync(path.join(sdir, 'index.html'), makeHtml(imgAll, artAll, '', true, 's/'));
+fs.copyFileSync(path.join(root, 'dist/index.html'), path.join(sdir, 's/index.html'));
+for (const f of fs.readdirSync(pdir)) fs.copyFileSync(path.join(pdir, f), path.join(sdir, 's/parts', f));
+fs.writeFileSync(path.join(sdir, '.nojekyll'), '');
+console.log('built site/ (teacher at index.html, students under s/)');

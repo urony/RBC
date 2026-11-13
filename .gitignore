@@ -1,3 +1,5 @@
 node_modules/
 dist/parts/
 dist/teacher-parts/
+site/
+dist/
