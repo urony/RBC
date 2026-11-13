@@ -219,3 +219,25 @@ table.cmp thead th .small{font-size:.66rem}
 table.cmp tbody th{width:21%;font-size:.72rem}
 table.cmp td b{font-size:1rem}
 img.avatar{object-fit:cover;background:var(--primary-soft);border:2px solid var(--surface);box-shadow:var(--shadow-s)}
+/* תיקוני סבב 2 */
+svg.chart{direction:ltr}
+.learned{border-inline-start:6px solid var(--teal);margin-top:12px}
+.learned ul{padding-inline-start:20px;margin:6px 0 0}.learned li{margin:7px 0}
+.lg{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.9rem;margin:10px 0 4px}
+.lg i{width:14px;height:14px;border-radius:50%;flex:0 0 14px}
+.lg span.muted{font-weight:500}
+.bin-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.bin{border:2px dashed var(--line);border-radius:16px;padding:10px;min-height:110px;background:var(--surface)}
+.bin.ok{border-color:var(--good)}.bin.no{border-color:var(--bad)}
+.bin h4{margin:0 0 6px;font-size:.95rem;text-align:center}
+.chip-pool{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chipx{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer}
+.chipx.pick{outline:3px solid var(--primary);background:var(--primary-soft)}
+.chipx.placed{cursor:default;background:var(--bg2);font-size:.85rem;padding:5px 10px}
+.chipx.shake{animation:shk .35s}
+@keyframes shk{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.tile.pick{outline:3px solid var(--primary);background:var(--primary-soft)}
+.reveal{background:var(--bg2);border-radius:14px;padding:14px;text-align:center}
+.reveal .btn{margin-top:8px}
+.mission{background:var(--primary-soft);border-radius:14px;padding:10px 12px;margin-bottom:12px}
+.mission h3{margin:0 0 6px}

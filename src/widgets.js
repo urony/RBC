@@ -104,3 +104,32 @@ function shareResultsModal() {
   $('#cp', bg).onclick = async () => { try { await navigator.clipboard.writeText(code); toast('הועתק ✅'); } catch (e) { $('#code', bg).select(); document.execCommand('copy'); toast('הועתק ✅'); } };
   $('#sh', bg).onclick = async () => { if (navigator.share) { try { await navigator.share({ text: code }); } catch (e) { } } else { $('#cp', bg).click(); } };
 }
+
+/* מיון מוצרים לתיבות: בוחרים מוצר ואז לוחצים על התיבה (אפשר גם בלי גרירה, נוח בטלפון) */
+function binGame(root, { items, buckets, tag, title, onDone }) {
+  const list = shuffle(items.map((x, i) => ({ ...x, _i: i }))); const placed = {}; let sel = null; const wrong = new Set();
+  const host = el('<div class="card"></div>'); root.appendChild(host);
+  function chip(it, cls = '') { return `<button class="chipx ${cls}" data-c="${it._i}">${it.e || ''} ${it.t}${IS_TEACHER ? ` <small>(← ${buckets[it.b]})</small>` : ''}</button>`; }
+  function draw(flash, shakeId) {
+    const left = list.filter(x => placed[x._i] == null);
+    host.innerHTML = `<p class="muted small">${title || 'בחרו פריט ואז לחצו על התיבה שמתאימה לו.'}</p>
+      <div class="chip-pool">${left.map(x => chip(x, (sel === x._i ? 'pick ' : '') + (shakeId === x._i ? 'shake' : ''))).join('') || '<span class="muted">כל המוצרים מוינו! 🎉</span>'}</div>
+      <div class="bin-row">${buckets.map((b, k) => `<div class="bin" data-b="${k}"><h4>${b}</h4><div class="chip-pool">${list.filter(x => placed[x._i] === k).map(x => chip(x, 'placed')).join('')}</div></div>`).join('')}</div>
+      <div id="fb">${flash || ''}</div>`;
+    if (!left.length) {
+      const n = list.length, pct = Math.round(100 * (n - wrong.size) / n);
+      host.insertAdjacentHTML('beforeend', `<div class="explain good"><b>למה?</b><ul style="margin:4px 0 0;padding-inline-start:18px">${items.map(x => `<li>${x.e || ''} ${x.t}: ${x.why}</li>`).join('')}</ul></div><button class="btn primary block" id="go" style="margin-top:10px">המשך ←</button>`);
+      $('#go', host).onclick = () => onDone(pct);
+    }
+  }
+  draw();
+  host.addEventListener('click', e => {
+    const c = e.target.closest('.chip-pool > .chipx:not(.placed)'), b = e.target.closest('[data-b]');
+    if (c) { sel = +c.dataset.c; draw(); return; }
+    if (b && sel != null) {
+      const it = list.find(x => x._i === sel), k = +b.dataset.b;
+      if (it.b === k) { placed[sel] = k; sel = null; draw('<div class="explain good">✅ מתאים!</div>'); }
+      else { wrong.add(sel); Store.mistake(tag); const id = sel; sel = null; draw('<div class="explain bad">🤔 לא מתאים לתיבה הזו. נסו תיבה אחרת.</div>', id); }
+    }
+  });
+}

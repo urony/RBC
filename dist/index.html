@@ -228,6 +228,28 @@ table.cmp thead th .small{font-size:.66rem}
 table.cmp tbody th{width:21%;font-size:.72rem}
 table.cmp td b{font-size:1rem}
 img.avatar{object-fit:cover;background:var(--primary-soft);border:2px solid var(--surface);box-shadow:var(--shadow-s)}
+/* תיקוני סבב 2 */
+svg.chart{direction:ltr}
+.learned{border-inline-start:6px solid var(--teal);margin-top:12px}
+.learned ul{padding-inline-start:20px;margin:6px 0 0}.learned li{margin:7px 0}
+.lg{display:flex;align-items:center;gap:8px;font-weight:700;font-size:.9rem;margin:10px 0 4px}
+.lg i{width:14px;height:14px;border-radius:50%;flex:0 0 14px}
+.lg span.muted{font-weight:500}
+.bin-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.bin{border:2px dashed var(--line);border-radius:16px;padding:10px;min-height:110px;background:var(--surface)}
+.bin.ok{border-color:var(--good)}.bin.no{border-color:var(--bad)}
+.bin h4{margin:0 0 6px;font-size:.95rem;text-align:center}
+.chip-pool{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chipx{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 12px;font:inherit;font-weight:600;cursor:pointer}
+.chipx.pick{outline:3px solid var(--primary);background:var(--primary-soft)}
+.chipx.placed{cursor:default;background:var(--bg2);font-size:.85rem;padding:5px 10px}
+.chipx.shake{animation:shk .35s}
+@keyframes shk{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.tile.pick{outline:3px solid var(--primary);background:var(--primary-soft)}
+.reveal{background:var(--bg2);border-radius:14px;padding:14px;text-align:center}
+.reveal .btn{margin-top:8px}
+.mission{background:var(--primary-soft);border-radius:14px;padding:10px 12px;margin-bottom:12px}
+.mission h3{margin:0 0 6px}
 </style>
 </head>
 <body><noscript>הכלי דורש JavaScript.</noscript>
@@ -425,6 +447,7 @@ function makeCtx(game, root) {
       const msg = pct >= 90 ? ['מושלם! אתם מדהימים 🎉', 'wow'] : pct >= 70 ? ['כל הכבוד – ממש מצוין!', 'happy'] : pct >= 40 ? ['יפה! עוד סיבוב ותהיו שם.', 'wink'] : ['לא נורא – טעויות הן הדרך ללמוד. נסו שוב!', 'think'];
       if (pct >= 70) confetti();
       root.innerHTML = `<div class="card victory">${mascot(msg[1], 'hero-m')}<h2>${pct}%</h2><div style="font-size:1.8rem;color:var(--gold)">${'★'.repeat(st)}${'☆'.repeat(3 - st)}</div><p>${msg[0]}</p><div class="muted small">שיא אישי: ${rec.best}% · ניסיונות: ${rec.attempts}</div></div>${extra}
+      ${game.learned && game.learned.length ? `<div class="card learned"><h3>📚 מה למדנו</h3><ul>${game.learned.map(x => `<li>${x}</li>`).join('')}</ul></div>` : ''}
       <div class="row" style="margin-top:6px"><button class="btn primary grow" data-act="again">🔁 שוב</button><button class="btn grow" data-act="back">חזרה לרשימה</button></div>`;
       $('.hero-m', root) && ($('.hero-m', root).style.cssText = 'width:110px;margin:0 auto 8px');
       $$('[data-act]', root).forEach(t => t.onclick = () => { if (t.dataset.act === 'again') { root.innerHTML = ''; game.mount(root, makeCtx(game, root)); } else location.hash = '#/' + game.part.toLowerCase(); });
@@ -549,6 +572,35 @@ function shareResultsModal() {
     <a class="btn block" style="margin-top:8px;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(code)}">שליחה בוואטסאפ</a>`);
   $('#cp', bg).onclick = async () => { try { await navigator.clipboard.writeText(code); toast('הועתק ✅'); } catch (e) { $('#code', bg).select(); document.execCommand('copy'); toast('הועתק ✅'); } };
   $('#sh', bg).onclick = async () => { if (navigator.share) { try { await navigator.share({ text: code }); } catch (e) { } } else { $('#cp', bg).click(); } };
+}
+
+/* מיון מוצרים לתיבות: בוחרים מוצר ואז לוחצים על התיבה (אפשר גם בלי גרירה, נוח בטלפון) */
+function binGame(root, { items, buckets, tag, title, onDone }) {
+  const list = shuffle(items.map((x, i) => ({ ...x, _i: i }))); const placed = {}; let sel = null; const wrong = new Set();
+  const host = el('<div class="card"></div>'); root.appendChild(host);
+  function chip(it, cls = '') { return `<button class="chipx ${cls}" data-c="${it._i}">${it.e || ''} ${it.t}${IS_TEACHER ? ` <small>(← ${buckets[it.b]})</small>` : ''}</button>`; }
+  function draw(flash, shakeId) {
+    const left = list.filter(x => placed[x._i] == null);
+    host.innerHTML = `<p class="muted small">${title || 'בחרו פריט ואז לחצו על התיבה שמתאימה לו.'}</p>
+      <div class="chip-pool">${left.map(x => chip(x, (sel === x._i ? 'pick ' : '') + (shakeId === x._i ? 'shake' : ''))).join('') || '<span class="muted">כל המוצרים מוינו! 🎉</span>'}</div>
+      <div class="bin-row">${buckets.map((b, k) => `<div class="bin" data-b="${k}"><h4>${b}</h4><div class="chip-pool">${list.filter(x => placed[x._i] === k).map(x => chip(x, 'placed')).join('')}</div></div>`).join('')}</div>
+      <div id="fb">${flash || ''}</div>`;
+    if (!left.length) {
+      const n = list.length, pct = Math.round(100 * (n - wrong.size) / n);
+      host.insertAdjacentHTML('beforeend', `<div class="explain good"><b>למה?</b><ul style="margin:4px 0 0;padding-inline-start:18px">${items.map(x => `<li>${x.e || ''} ${x.t}: ${x.why}</li>`).join('')}</ul></div><button class="btn primary block" id="go" style="margin-top:10px">המשך ←</button>`);
+      $('#go', host).onclick = () => onDone(pct);
+    }
+  }
+  draw();
+  host.addEventListener('click', e => {
+    const c = e.target.closest('.chip-pool > .chipx:not(.placed)'), b = e.target.closest('[data-b]');
+    if (c) { sel = +c.dataset.c; draw(); return; }
+    if (b && sel != null) {
+      const it = list.find(x => x._i === sel), k = +b.dataset.b;
+      if (it.b === k) { placed[sel] = k; sel = null; draw('<div class="explain good">✅ מתאים!</div>'); }
+      else { wrong.add(sel); Store.mistake(tag); const id = sel; sel = null; draw('<div class="explain bad">🤔 לא מתאים לתיבה הזו. נסו תיבה אחרת.</div>', id); }
+    }
+  });
 }
 
 /* ---- cells.js ---- */
@@ -782,7 +834,14 @@ const CAT_TAG = { ida: 'ida_vs_acd', acd: 'ida_vs_acd', hemo: 'hemolysis_markers
 
 /* ---------- 1. מבנה ותפקוד ---------- */
 registerGame({
-  id: 'a_struct', part: 'A', sec: 'basics', icon: '🔬', title: 'מעבדת התכנון: בנו כדורית', desc: 'מבנה מכתיב תפקוד – גלו את התכנון האידיאלי',
+  id: 'a_struct', part: 'A', learned: [
+    'כדורית בוגרת בלי גרעין ובלי אברונים, כולל מיטוכונדריה.',
+    'בלי גרעין יש יותר מקום להמוגלובין, ולכן כל תא נושא יותר חמצן.',
+    'בלי מיטוכונדריה התא לא צורך את החמצן שהוא מוביל.',
+    'דיסקית דו-קעורה נותנת שטח פנים גדול ביחס לנפח, ולכן חילופי הגזים יעילים.',
+    'גמישות הממברנה מאפשרת לעבור בנימים צרים מקוטר התא.',
+    'המחיר: אין תיקון עצמי, ולכן אורך החיים הוא כ-120 יום.'
+  ], sec: 'basics', icon: '🔬', title: 'מעבדת התכנון: בנו כדורית', desc: 'מבנה מכתיב תפקוד – גלו את התכנון האידיאלי',
   teacherNote: 'הפתרון האידיאלי: בלי גרעין, בלי אברונים, דיסקית דו-קעורה וגמישה. הסטודנטים מגלים זאת דרך ניסוי ואז עונים על שאלות סיכום.',
   mount(root, ctx) {
     const S = { nuc: true, org: true, shape: 'sphere', flex: false };
@@ -816,11 +875,31 @@ registerGame({
     function quiz() {
       root.innerHTML = '';
       runQuiz(root, ctx, [
-        { q: 'מדוע היעדר הגרעין מועיל לכדורית הדם האדומה?', tag: 'struct_func', options: [{ t: 'מתפנה נפח לאחסון עשרות מיליוני מולקולות המוגלובין', ok: true, why: 'כל כדורית נושאת כ-200–250 מיליון מולקולות המוגלובין.' }, { t: 'כך היא יכולה לשכפל את עצמה', why: 'כדורית בוגרת אינה מתחלקת.' }, { t: 'כך היא מייצרת חלבונים בקצב מהיר יותר', why: 'היעדר גרעין פירושו שהיא לא מייצרת חלבונים חדשים.' }] },
-        { q: 'מה היתרון של הצורה הדו-קעורה?', tag: 'struct_func', fig: 'rbc_structure', figCap: 'מבנה כדורית הדם האדומה (איור מהספר)', options: [{ t: 'יחס גבוה בין שטח הפנים לנפח – דיפוזיה יעילה של גזים', ok: true, why: 'שטח פנים גדול מקצר את זמן הרוויה בחמצן בריאות ואת זמן השחרור ברקמות.' }, { t: 'היא מאפשרת לכדורית להכיל יותר גרעינים', why: 'אין גרעין בכדורית בוגרת.' }, { t: 'היא הופכת את הכדורית לקשיחה יותר', why: 'להפך – גמישות היא יתרון.' }] },
-        { q: 'כדורית חיה כ-120 יום ואינה מתקנת נזקים. מדוע?', tag: 'struct_func', options: [{ t: 'בלי אברונים היא אינה מסוגלת לייצר חלבונים חדשים או לתקן את המבנה', ok: true, why: 'לאחר כ-120 יום היא מאבדת גמישות ונלכדת בטחול ובכבד על ידי מקרופאגים.' }, { t: 'הכבד מחסל אותה בכוונה אחרי 120 יום, גם אם היא תקינה לגמרי', why: 'ההסרה נובעת מהזדקנות ומשינויים בקרום התא.' }, { t: 'היא פשוט מתרוקנת מהמוגלובין', why: 'ההמוגלובין לא "נגמר" – הבעיה היא פגיעה מצטברת בממברנה.' }] },
-        { q: 'מדוע חסרה לכדורית הבוגרת מיטוכונדריה?', tag: 'struct_func', options: [{ t: 'כדי שלא תצרוך חמצן בעצמה – כל החמצן מגיע לתאי היעד', ok: true, why: 'היעדר מיטוכונדריה מבטיח שהחמצן המובל לא נצרך על ידי הכדורית עצמה.' }, { t: 'כי החמצן מזיק לה', why: 'לא זו הסיבה.' }, { t: 'כי המיטוכונדריה גדולה מדי לנימים', why: 'הסיבה האמיתית היא מניעת צריכת חמצן עצמית.' }] },
-        { q: 'קוטר כדורית כ-7.5 מיקרון, וקוטר נימים לעיתים פחות מ-3 מיקרון. מה מאפשר לה לעבור?', tag: 'struct_func', options: [{ t: 'גמישות מכנית – היא מתקפלת ומתעוותת בלי להינזק', ok: true, why: 'הגמישות נובעת משלד הממברנה ומהיעדר גרעין.' }, { t: 'היא מתפרקת לחתיכות וחוזרת להתחבר', why: 'הכדורית נשארת שלמה.' }, { t: 'הלחץ בדם דוחף אותה בכוח', why: 'הלחץ לא מספיק אם התא קשיח.' }] },
+        { q: 'מדוע היעדר הגרעין מועיל לכדורית הדם האדומה?', tag: 'struct_func', options: [
+          { t: 'מתפנה בתא נפח לעוד המוגלובין, ולכן הוא נושא יותר חמצן', ok: true, why: 'כל כדורית נושאת כ-200–250 מיליון מולקולות המוגלובין.' },
+          { t: 'התא מפסיק לצרוך חמצן, ולכן נשאר יותר חמצן להובלה', why: 'צריכת החמצן העצמית תלויה במיטוכונדריה, לא בגרעין.' },
+          { t: 'התא יכול להתחלק מהר יותר ולחדש את עצמו בזרם הדם', why: 'כדורית בוגרת אינה מתחלקת.' },
+          { t: 'התא חי זמן רב יותר כי אין גרעין שמתבלה', why: 'להפך: בלי גרעין אין תיקון, והחיים מוגבלים ל-120 יום.' }] },
+        { q: 'מה היתרון של הצורה הדו-קעורה?', tag: 'struct_func', options: [
+          { t: 'שטח פנים גדול ביחס לנפח, כך שהגזים עוברים בדיפוזיה מהר', ok: true, why: 'שטח פנים גדול מקצר את זמן הרוויה בריאות ואת השחרור ברקמות.' },
+          { t: 'נפח פנימי גדול יותר מכדור, ולכן נכנס יותר המוגלובין', why: 'היתרון הוא היחס בין שטח הפנים לנפח, לא הנפח עצמו.' },
+          { t: 'קשיחות גבוהה שמונעת מהתא להתעוות בזרם הדם', why: 'להפך: גמישות היא יתרון חשוב.' },
+          { t: 'חיכוך נמוך עם דופן כלי הדם, ולכן התא נע מהר יותר', why: 'הצורה משפיעה בעיקר על חילופי הגזים.' }] },
+        { q: 'כדורית חיה כ-120 יום ואינה מתקנת נזקים. מדוע?', tag: 'struct_func', options: [
+          { t: 'אין לה אברונים לייצר חלבונים חדשים, ולכן נזקי הממברנה מצטברים', ok: true, why: 'אחרי כ-120 יום היא מאבדת גמישות ונלכדת בטחול ובכבד על ידי מקרופאגים.' },
+          { t: 'ההמוגלובין שלה מתרוקן בהדרגה עד שהיא חסרת תועלת', why: 'ההמוגלובין לא "נגמר"; הבעיה היא פגיעה מצטברת בממברנה.' },
+          { t: 'הטחול משמיד אותה לפי שעון קבוע, בלי קשר למצבה', why: 'ההסרה נובעת משינויים בקרום התא ולא מ"שעון".' },
+          { t: 'מח העצם שולח אות להרוס כל כדורית בת 120 יום', why: 'אין אות כזה; הזיהוי מבוסס על מצב התא.' }] },
+        { q: 'מדוע חסרה לכדורית הבוגרת מיטוכונדריה?', tag: 'struct_func', options: [
+          { t: 'כדי שהתא לא יצרוך בעצמו את החמצן שהוא מוביל', ok: true, why: 'כך כל החמצן המובל מגיע לתאי היעד. את האנרגיה היא מפיקה בגליקוליזה.' },
+          { t: 'כדי שהיא תפיק אנרגיה מחמצן ביעילות רבה יותר', why: 'להפך: המיטוכונדריה היא האברון שצורך חמצן להפקת אנרגיה.' },
+          { t: 'כי התא אינו זקוק לאנרגיה כלל', why: 'היא זקוקה לאנרגיה לשמירת הצורה והגמישות, ומפיקה אותה בגליקוליזה.' },
+          { t: 'כדי להקטין את התא בלבד, בלי קשר לחמצן', why: 'ההסבר הוא מניעת צריכת חמצן עצמית.' }] },
+        { q: 'קוטר כדורית כ-7.5 מיקרון, וקוטר נימים לעיתים פחות מ-3 מיקרון. מה מאפשר לה לעבור?', tag: 'struct_func', fig: 'rbc_structure', figCap: 'מבנה כדורית הדם האדומה (איור מהספר)', options: [
+          { t: 'גמישות: התא מתכופף ומשנה צורה בלי להיקרע', ok: true, why: 'הגמישות נובעת משלד הממברנה ומהיעדר גרעין.' },
+          { t: 'התא מתכווץ לגודל של 3 מיקרון ומתרחב שוב אחרי הנימים', why: 'התא משנה צורה, לא נפח.' },
+          { t: 'הלחץ בכלי הדם דוחף אותו בכוח, גם כשהוא קשיח', why: 'תא קשיח נתקע, ולכן הגמישות חיונית.' },
+          { t: 'התא מרוקן את תוכנו זמנית ונטען מחדש בכלי הגדול', why: 'התא נשאר שלם ומלא בהמוגלובין.' }] },
       ]);
     }
   },
@@ -828,49 +907,86 @@ registerGame({
 
 /* ---------- 2. הובלת חמצן ---------- */
 registerGame({
-  id: 'a_o2', part: 'A', sec: 'basics', icon: '🫁', title: 'הובלת חמצן: המוגלובין בפעולה', desc: 'עקומת הרוויה, הרעלת CO ומה באמת קורה באנמיה',
+  id: 'a_o2', part: 'A', learned: [
+    'רוויית ההמוגלובין תלויה בלחץ החלקי של החמצן, לא בכמות ההמוגלובין.',
+    'באנמיה הרוויה תקינה אך כמות החמצן הכוללת נמוכה, כי יש פחות המוגלובין.',
+    'פחמן חד-חמצני נקשר להמוגלובין חזק פי 200 מחמצן ותופס את מקומו.',
+    'חמצן עובר בדיפוזיה מהריאה לדם ומהדם לרקמות. CO₂ מובל בעיקר כביקרבונט בפלזמה.'
+  ], sec: 'basics', icon: '🫁', title: 'הובלת חמצן: המוגלובין בפעולה', desc: 'עקומת הרוויה, הרעלת CO ומה באמת קורה באנמיה',
   teacherNote: 'נקודת המפתח: באנמיה הרוויה (SpO₂) תקינה אך תכולת החמצן ירודה, כי יש פחות המוגלובין. הסימולציה משתמשת במשוואה סטנדרטית (עקומת היל) להמחשה, וערכי התכולה הם קירוב.',
   mount(root, ctx) {
-    const S = { p: 100, hb: 14, co: 0 };
+    const S = { p: 100, hb: 14, co: 0 }, M = { a: false, b: false, c: false };
     const n = 2.7, P50 = 26.8;
     const sat = (p, co) => { const p50 = P50 * (1 - .45 * co); const x = Math.pow(p, n); return x / (x + Math.pow(p50, n)); };
     root.insertAdjacentHTML('afterbegin', say('הנה המוגלובין! שחקו עם הלחץ החלקי של החמצן, עם רמת ההמוגלובין ועם פחמן חד-חמצני – ובדקו מה משתנה.', 'wow'));
     const card = el('<div class="card"></div>'); root.appendChild(card);
     function draw() {
       const co = S.co / 100, hbEff = S.hb * (1 - co);
+      if (S.hb <= 8 && S.co === 0) M.a = true; if (S.co >= 30) M.b = true; if (S.p === 40) M.c = true;
       const sL = sat(100, co), sT = sat(40, co), cL = 1.34 * hbEff * sL + .003 * 100, cT = 1.34 * hbEff * sT + .003 * 40, cur = sat(S.p, co);
       let path = ''; for (let p = 0; p <= 110; p += 2) path += `${p === 0 ? 'M' : 'L'}${30 + p * 2.6},${150 - sat(p, co) * 130} `;
       const X = p => 30 + p * 2.6, Y = s => 150 - s * 130;
-      card.innerHTML = `<svg class="chart" viewBox="0 0 330 175"><text x="318" y="12" font-size="11" fill="var(--muted)" text-anchor="end">רוויית המוגלובין לפי לחץ חמצן</text>
+      const missions = [
+        [M.a, 'הורידו את ההמוגלובין ל-8 או פחות (בלי CO) וראו מה קורה לרוויה ולחמצן שנמסר'],
+        [M.b, 'הוסיפו פחמן חד-חמצני (CO) ל-30% או יותר'],
+        [M.c, 'העבירו את הלחץ החלקי ל-40 mmHg (כמו ברקמות) וראו את הרוויה'],
+      ];
+      card.innerHTML = `<div class="mission"><h3>🎯 משימות: מה לנסות</h3>${missions.map(m => `<div class="row" style="margin:5px 0"><span>${m[0] ? '✅' : '⬜'}</span><span class="${m[0] ? 'muted' : ''}">${m[1]}</span></div>`).join('')}</div>
+        <div class="slider"><label><span>לחץ חלקי של חמצן (pO₂)</span><b class="ltr">${S.p} mmHg</b></label><input type="range" min="0" max="110" value="${S.p}" data-k="p"></div>
+        <div class="slider"><label><span>רמת המוגלובין בדם</span><b class="ltr">${S.hb} g/dL</b></label><input type="range" min="4" max="18" step=".5" value="${S.hb}" data-k="hb"></div>
+        <div class="slider"><label><span>פחמן חד-חמצני (CO) – אחוז המוגלובין תפוס</span><b class="ltr">${S.co}%</b></label><input type="range" min="0" max="60" step="5" value="${S.co}" data-k="co"></div>
+        <svg class="chart" viewBox="0 0 330 175"><text x="318" y="12" font-size="11" fill="var(--muted)" text-anchor="end">רוויית המוגלובין לפי לחץ חמצן</text>
         <line x1="30" y1="150" x2="316" y2="150" stroke="var(--line)"/><line x1="30" y1="20" x2="30" y2="150" stroke="var(--line)"/>
         <path d="${path}" fill="none" stroke="var(--primary)" stroke-width="3"/>
         <line x1="${X(100)}" x2="${X(100)}" y1="20" y2="150" stroke="var(--teal)" stroke-dasharray="4 4"/><text x="${X(100)}" y="165" font-size="10" fill="var(--teal)" text-anchor="middle">ריאות 100</text>
         <line x1="${X(40)}" x2="${X(40)}" y1="20" y2="150" stroke="var(--blue)" stroke-dasharray="4 4"/><text x="${X(40)}" y="165" font-size="10" fill="var(--blue)" text-anchor="middle">רקמות 40</text>
         <circle cx="${X(S.p)}" cy="${Y(cur)}" r="7" fill="var(--gold)" stroke="#fff" stroke-width="2"/></svg>
-        <div class="slider"><label><span>לחץ חלקי של חמצן (pO₂)</span><b class="ltr">${S.p} mmHg</b></label><input type="range" min="0" max="110" value="${S.p}" data-k="p"></div>
-        <div class="slider"><label><span>רמת המוגלובין בדם</span><b class="ltr">${S.hb} g/dL</b></label><input type="range" min="4" max="18" step=".5" value="${S.hb}" data-k="hb"></div>
-        <div class="slider"><label><span>פחמן חד-חמצני (CO) – אחוז המוגלובין תפוס</span><b class="ltr">${S.co}%</b></label><input type="range" min="0" max="60" step="5" value="${S.co}" data-k="co"></div>
         <div class="kpi"><div><b>${Math.round(cur * 100)}%</b><span>רוויה בלחץ שנבחר</span></div><div><b>${Math.round(sL * 100)}%</b><span>רוויה בריאות</span></div><div><b>${Math.round(sT * 100)}%</b><span>רוויה ברקמות</span></div></div>
         <div class="kpi"><div><b>${cL.toFixed(1)}</b><span>חמצן בדם (מ"ל/ד"ל) – ריאות</span></div><div><b>${cT.toFixed(1)}</b><span>חמצן בדם – רקמות</span></div><div class="${(cL - cT) < 3.5 ? 'L' : ''}"><b>${(cL - cT).toFixed(1)}</b><span>חמצן שנמסר לרקמות</span></div></div>
-        <div class="explain">${S.hb < 11 && S.co === 0 ? '💡 שימו לב: ברמת המוגלובין נמוכה הרוויה נשארת גבוהה, אבל הכמות הכוללת של חמצן שהדם נושא קטנה! אנמיה פוגעת בקיבולת ההובלה, לא באחוז הרוויה.' : S.co >= 20 ? '☠️ CO נקשר להמוגלובין חזק פי 200 מחמצן, תופס מקום ומקשה גם על שחרור החמצן – לכן כמות החמצן שנמסרת צונחת.' : 'נסו להוריד את המוגלובין או להוסיף CO ולראות את החמצן שנמסר לרקמות.'}</div>
+        <div class="explain">${S.hb < 11 && S.co === 0 ? '💡 שימו לב: ברמת המוגלובין נמוכה הרוויה נשארת גבוהה, אבל הכמות הכוללת של חמצן שהדם נושא קטנה! אנמיה פוגעת בקיבולת ההובלה, לא באחוז הרוויה.' : S.co >= 20 ? '☠️ CO נקשר להמוגלובין חזק פי 200 מחמצן, תופס מקום ומקשה גם על שחרור החמצן – לכן כמות החמצן שנמסרת צונחת.' : 'נסו להוריד את ההמוגלובין או להוסיף CO ולראות את החמצן שנמסר לרקמות.'}</div>
         ${fig('o2_delivery', 'העברת חמצן בריאות וברקמות (איור מהספר)')}`;
       $$('input[type=range]', card).forEach(r => r.oninput = () => { S[r.dataset.k] = +r.value; const y = window.scrollY; draw(); window.scrollTo(0, y); const nr = $(`input[data-k=${r.dataset.k}]`, card); nr && nr.focus(); });
     }
     draw();
     const go = el('<button class="btn primary block">למבחן קצר 🏁</button>'); root.appendChild(go);
     go.onclick = () => { root.innerHTML = ''; runQuiz(root, ctx, [
-      { q: 'אדם עם המוגלובין 7 g/dL (אנמיה) והריאות שלו תקינות. מה תהיה רוויית החמצן בהמוגלובין (SpO₂) שלו?', tag: 'o2_transport', options: [{ t: 'תקינה – אבל כמות החמצן הכוללת בדם נמוכה', ok: true, why: 'באחוז הרוויה כל מולקולת המוגלובין עמוסה, אבל יש פחות מולקולות.' }, { t: 'נמוכה מאוד', why: 'הרוויה תלויה בלחץ החמצן ולא בכמות ההמוגלובין.' }, { t: 'גבוהה מ-100%', why: 'אי אפשר לעבור 100%.' }] },
-      { q: 'מדוע הרעלת פחמן חד-חמצני (CO) מסוכנת כל כך?', tag: 'o2_transport', options: [{ t: 'CO נקשר לברזל בהמוגלובין חזק פי 200 מחמצן ומונע הובלת חמצן', ok: true, why: 'לכן דורש טיפול רפואי דחוף.' }, { t: 'CO הורס את הכדוריות מיד', why: 'הבעיה היא תפיסת אתרי הקישור.' }, { t: 'CO מוריד את מספר הכדוריות', why: 'המספר נשמר, אבל הן "תפוסות".' }] },
-      { q: 'כמה מולקולות חמצן יכולה לשאת מולקולת המוגלובין אחת, ולמה?', tag: 'o2_transport', fig: 'hemoglobin', figCap: 'מבנה ההמוגלובין (איור מהספר)', options: [{ t: 'עד 4 – יש בה 4 תת-יחידות, בכל אחת קבוצת הֶם עם אטום ברזל', ok: true, why: 'אטום הברזל בהֶם הוא האתר הפעיל לקישור חמצן.' }, { t: '1 – יש רק אטום ברזל אחד', why: 'יש ארבע קבוצות הֶם.' }, { t: '100 – כל חומצת אמינו קושרת חמצן', why: 'הקישור הוא לברזל שבהֶם.' }] },
-      { q: 'איך עובר החמצן מהאלוואולי אל הדם וממנו לרקמות?', tag: 'o2_transport', options: [{ t: 'בדיפוזיה פשוטה לפי מפל ריכוזים, בלי צריכת אנרגיה', ok: true, why: 'לחץ החמצן כ-100 mmHg בריאות וכ-40 ברקמות.' }, { t: 'בהובלה פעילה שצורכת ATP', why: 'אין צורך באנרגיה מטבולית.' }, { t: 'על ידי שאיבה של הלב', why: 'הלב מזרים דם, אך הגז עובר בדיפוזיה.' }] },
-      { q: 'איך מובל רוב הפחמן הדו-חמצני בדם?', tag: 'o2_transport', fig: 'co2', figCap: 'הובלת CO₂ (איור מהספר)', options: [{ t: 'כ-60% כביקרבונט בפלזמה, בזכות האנזים קרבוניק אנהידראז בכדורית', ok: true, why: 'כ-30% נקשרים לגלובין וכ-10% מומסים.' }, { t: 'כ-60% נקשרים לברזל בהֶם', why: 'לברזל נקשר חמצן; CO₂ נקשר לגלובין (כ-30%).' }, { t: 'כולו מומס בפלזמה', why: 'רק כ-10% מומסים.' }] },
+      { q: 'אדם עם המוגלובין 7 g/dL (אנמיה) והריאות שלו תקינות. מה יהיו רוויית החמצן (SpO₂) והכמות הכוללת של חמצן בדם?', tag: 'o2_transport', options: [
+        { t: 'הרוויה תקינה, אך הכמות הכוללת של החמצן בדם נמוכה', ok: true, why: 'כל מולקולת המוגלובין עמוסה, אבל יש פחות מולקולות.' },
+        { t: 'הרוויה נמוכה, כי יש פחות המוגלובין שקושר חמצן', why: 'הרוויה תלויה בלחץ החמצן ולא בכמות ההמוגלובין.' },
+        { t: 'הרוויה גבוהה במיוחד, כי כל מולקולה קושרת יותר חמצן', why: 'מולקולה קושרת עד 4 מולקולות חמצן בלבד.' },
+        { t: 'גם הרוויה וגם הכמות תקינות, כי הריאות תקינות', why: 'הכמות הכוללת תלויה גם ברמת ההמוגלובין.' }] },
+      { q: 'מדוע הרעלת פחמן חד-חמצני (CO) מסוכנת כל כך?', tag: 'o2_transport', options: [
+        { t: 'הוא נקשר להמוגלובין חזק פי 200 מחמצן ומונע הובלת חמצן', ok: true, why: 'לכן דורש טיפול רפואי דחוף.' },
+        { t: 'הוא מפרק את ההמוגלובין ומונע ייצור כדוריות חדשות', why: 'הבעיה היא תפיסת אתרי הקישור, לא פירוק.' },
+        { t: 'הוא מגביר את צריכת החמצן ברקמות מעבר ליכולת הדם', why: 'הצריכה לא משתנה; ההובלה היא שנפגעת.' },
+        { t: 'הוא הורס את קרום הכדורית ומחסל את התאים בדקות', why: 'הכדוריות נשארות שלמות אך "תפוסות".' }] },
+      { q: 'כמה מולקולות חמצן יכולה לשאת מולקולת המוגלובין אחת, ולמה?', tag: 'o2_transport', fig: 'hemoglobin', figCap: 'מבנה ההמוגלובין (איור מהספר)', options: [
+        { t: 'עד ארבע: יש בה ארבע קבוצות הֶם, ובכל אחת אטום ברזל', ok: true, why: 'אטום הברזל בהֶם הוא האתר הפעיל לקישור חמצן.' },
+        { t: 'אחת, כי יש במולקולה אטום ברזל אחד בלבד', why: 'יש ארבע קבוצות הֶם.' },
+        { t: 'שתיים, כי היא בנויה משתי שרשראות בלבד', why: 'היא בנויה מארבע תת-יחידות, כל אחת עם הֶם.' },
+        { t: 'מאות, כי כל חומצת אמינו קושרת חמצן', why: 'הקישור הוא לברזל שבהֶם.' }] },
+      { q: 'איך עובר החמצן מהאלוואולי אל הדם וממנו לרקמות?', tag: 'o2_transport', options: [
+        { t: 'בדיפוזיה לפי הפרש לחצים, בלי צריכת אנרגיה', ok: true, why: 'לחץ החמצן כ-100 mmHg בריאות וכ-40 ברקמות.' },
+        { t: 'בהובלה פעילה שמשתמשת בחלבוני קרום ובאנרגיה', why: 'אין צורך באנרגיה מטבולית.' },
+        { t: 'בשאיבה של הלב שדוחפת את הגז דרך דופן הנימים', why: 'הלב מזרים דם, אך הגז עובר בדיפוזיה.' },
+        { t: 'באנדוציטוזה של בועיות חמצן אל תוך הכדוריות', why: 'חמצן הוא מולקולה קטנה שעוברת ישירות.' }] },
+      { q: 'איך מובל רוב הפחמן הדו-חמצני בדם?', tag: 'o2_transport', fig: 'co2', figCap: 'הובלת CO₂ (איור מהספר)', options: [
+        { t: 'בעיקר כביקרבונט בפלזמה, בעזרת אנזים בתוך הכדורית', ok: true, why: 'האנזים הוא קרבוניק אנהידראז. כ-30% נקשרים לגלובין וכ-10% מומסים.' },
+        { t: 'בעיקר קשור לברזל בהֶם, באותו אתר כמו החמצן', why: 'לברזל נקשר חמצן; CO₂ נקשר לחלק הגלובין.' },
+        { t: 'בעיקר מומס בפלזמה כגז, בלי צורך בכדוריות', why: 'רק כ-10% מומסים.' },
+        { t: 'בעיקר קשור לאלבומין בפלזמה', why: 'אלבומין אינו נשא עיקרי של CO₂.' }] },
     ]); };
   },
 });
 
 /* ---------- 3. EPO ---------- */
 registerGame({
-  id: 'a_epo', part: 'A', sec: 'basics', icon: '🧪', title: 'הכליה מווסתת: משוב ה-EPO', desc: 'נבאו, הריצו סימולציה וראו את מנגנון המשוב השלילי',
+  id: 'a_epo', part: 'A', learned: [
+    'ירידה באספקת החמצן לרקמות מעלה את ה-EPO מהכליה, והייצור במח העצם גובר.',
+    'כשמספר הכדוריות חוזר לנורמה ה-EPO יורד: זה משוב שלילי.',
+    'במחלת כליות כרונית ה-EPO עצמו נפגע, ולכן אין איזון ונוצרת אנמיה. EPO סינתטי יכול לתקן זאת.',
+    'בהמוליזה ה-EPO עולה והמח מואץ, אך הייצור לא תמיד מדביק את ההרס.'
+  ], sec: 'basics', icon: '🧪', title: 'הכליה מווסתת: משוב ה-EPO', desc: 'נבאו, הריצו סימולציה וראו את מנגנון המשוב השלילי',
   teacherNote: 'הסימולציה היא מודל פשטני (אותו עיקרון כמו בספר): ירידה בחמצן ברקמות ← עלייה ב-EPO ← ייצור מוגבר. כוללת השהיה של כמה ימים בבשלות במח העצם. המספרים להמחשה בלבד.',
   mount(root, ctx) {
     const SCN = [
@@ -914,16 +1030,31 @@ registerGame({
         mcq(box, { q: 'ומה יקרה למספר הכדוריות לאורך זמן?', tag: 'epo_feedback', options: Object.keys(FO).map(k => ({ t: FO[k], ok: k === sc.fin })), onDone: ok => { total++; if (ok) right++; run(); } });
       }
       function run() {
-        const sim = simulate(sc.p), box = el('<div style="margin-top:16px"><h3>הסימולציה</h3><div id="ch"></div><div class="explain" id="ex" style="display:none"></div></div>'); c.appendChild(box);
-        let k = 2; const n = sim.Rs.length;
-        const iv = setInterval(() => {
-          k += 3; const kk = Math.min(k, n);
-          $('#ch', box).innerHTML = lineChart([{ pts: sim.Rs.slice(0, kk), color: 'var(--primary)', n }], { yMin: 40, yMax: 150, ref: 100, label: 'מספר הכדוריות (100 = נורמה)' }) + '<div style="height:6px"></div>' +
-            lineChart([{ pts: sim.Es.slice(0, kk), color: 'var(--blue)', n }], { yMin: 0, yMax: 6, ref: 1, label: 'רמת EPO (1 = נורמה)', h: 100 }) + '<div style="height:6px"></div>' +
-            lineChart([{ pts: sim.Ts.slice(0, kk), color: 'var(--gold)', n }], { yMin: 0, yMax: 12, ref: 1.5, label: 'רטיקולוציטים (%)', h: 100 });
-          if (kk >= n) { clearInterval(iv); const ex = $('#ex', box); ex.style.display = ''; ex.innerHTML = `💡 ${sc.exp}`; const nx = el(`<button class="btn primary block" style="margin-top:12px">${i + 1 >= SCN.length ? 'לסיכום 🏁' : 'לתרחיש הבא ←'}</button>`); nx.onclick = () => { i++; round(); }; c.appendChild(nx); }
-        }, 45);
-        c._iv = iv;
+        const sim = simulate(sc.p), n = sim.Rs.length;
+        const box = el('<div style="margin-top:16px"><h3>הסימולציה</h3><p class="muted small">שלושה גרפים לאורך 90 ימים. הקו המקווקו הוא הערך התקין.</p><div id="ch"></div><div class="explain" id="ex" style="display:none"></div><div id="ctl"></div></div>'); c.appendChild(box);
+        const LG = (col, t) => `<div class="lg"><i style="background:${col}"></i>${t}</div>`;
+        function frame(kk) {
+          $('#ch', box).innerHTML = LG('var(--primary)', 'מספר הכדוריות בדם <span class="muted">(100 = נורמה)</span>') + lineChart([{ pts: sim.Rs.slice(0, kk), color: 'var(--primary)', n }], { yMin: 40, yMax: 150, ref: 100 }) +
+            LG('var(--blue)', 'רמת ה-EPO שהכליה מפרישה <span class="muted">(1 = נורמה)</span>') + lineChart([{ pts: sim.Es.slice(0, kk), color: 'var(--blue)', n }], { yMin: 0, yMax: 6, ref: 1, h: 100 }) +
+            LG('var(--gold)', 'קצב ייצור כדוריות חדשות: רטיקולוציטים <span class="muted">(%)</span>') + lineChart([{ pts: sim.Ts.slice(0, kk), color: 'var(--gold)', n }], { yMin: 0, yMax: 12, ref: 1.5, h: 100 });
+        }
+        let nxBtn = null;
+        function play() {
+          $('#ex', box).style.display = 'none'; $('#ctl', box).innerHTML = '';
+          let k = 2;
+          const iv = setInterval(() => {
+            k += 3; const kk = Math.min(k, n); frame(kk);
+            if (kk >= n) {
+              clearInterval(iv); const ex = $('#ex', box); ex.style.display = ''; ex.innerHTML = `💡 ${sc.exp}`;
+              const ctl = $('#ctl', box); ctl.innerHTML = '<button class="btn block" id="rp" style="margin-top:10px">↻ הצג שוב</button>';
+              $('#rp', ctl).onclick = play;
+              if (!nxBtn) { nxBtn = el(`<button class="btn primary block" style="margin-top:10px">${i + 1 >= SCN.length ? 'לסיכום 🏁' : 'לתרחיש הבא ←'}</button>`); nxBtn.onclick = () => { i++; round(); }; }
+              ctl.appendChild(nxBtn);
+            }
+          }, 45);
+          c._iv = iv;
+        }
+        play();
       }
       ask1();
     }
@@ -935,7 +1066,12 @@ registerGame({
 
 /* ---------- 4. בילירובין ---------- */
 registerGame({
-  id: 'a_bili', part: 'A', sec: 'basics', icon: '🟡', title: 'מסע ההֶם: מכדורית ישנה לצהבת', desc: 'סדרו את מסלול הפירוק והבילירובין',
+  id: 'a_bili', part: 'A', learned: [
+    'כדורית ישנה נבלעת במקרופאג: הגלובין הופך לחומצות אמינו, הברזל מוחזר וההֶם הופך לבילירובין.',
+    'בילירובין לא ישיר נקשר לאלבומין ועובר לכבד, שם הופך לישיר ומסיס.',
+    'בילירובין ישיר עובר דרך המרה למעי, ושם נוצר הצבע החום של הצואה.',
+    'בהמוליזה עולה הבילירובין הלא ישיר, ולכן מופיעים צהבת ושתן כהה.'
+  ], sec: 'basics', icon: '🟡', title: 'מסע ההֶם: מכדורית ישנה לצהבת', desc: 'סדרו את מסלול הפירוק והבילירובין',
   teacherNote: 'שלב ראשון: סידור 8 שלבים. שלב שני: 4 שאלות על צהבת בהמוליזה. הציון הוא ממוצע של הסידור (בניסיון הראשון) והשאלות.',
   mount(root, ctx) {
     const steps = [
@@ -954,10 +1090,26 @@ registerGame({
     function quiz() {
       const wrap = { ...ctx, finish: (p, ex) => ctx.finish(Math.round((ord + p) / 2), ex) };
       runQuiz(root, wrap, [
-        { q: 'במצב של המוליזה מוגברת, איזה בילירובין עולה בדם?', tag: 'bili_path', options: [{ t: 'בילירובין לא ישיר', ok: true, why: 'הוא נוצר מפירוק ההֶם, והכבד לא מספיק לעבד את כולו.' }, { t: 'בילירובין ישיר בלבד', why: 'הישיר נוצר בכבד, והבעיה בהמוליזה היא עודף ייצור לפני הכבד.' }] },
-        { q: 'מדוע מופיעה צהבת (עור ולובן עיניים צהובים) באנמיה המוליטית?', tag: 'bili_path', options: [{ t: 'הכבד מוצף בבילירובין מעבר ליכולת העיבוד שלו, והעודף שוקע ברקמות', ok: true, why: 'כך הבילירובין הלא ישיר מצטבר בדם ומצהיב את העור והלחמיות.' }, { t: 'הכבד מפסיק לעבוד לחלוטין', why: 'הכבד תקין, אך הוצף.' }, { t: 'חוסר ברזל גורם לצהבת', why: 'צהבת קשורה לבילירובין, לא לחוסר ברזל.' }] },
-        { q: 'מה קורה לברזל שמשתחרר בפירוק ההֶם?', tag: 'bili_path', options: [{ t: 'נקשר לטרנספרין ומוחזר למח העצם לייצור המוגלובין חדש, או נאגר בכבד', ok: true, why: 'כ-95% מהברזל שנדרש נלקח ממיחזור.' }, { t: 'מופרש בשתן כבילירובין', why: 'הבילירובין נוצר מהֶם בלי הברזל.' }, { t: 'נהרס לחלוטין', why: 'הברזל יקר – ממחזרים אותו.' }] },
-        { q: 'למה השתן נעשה כהה (דמוי תה) בהמוליזה חריפה?', tag: 'bili_path', options: [{ t: 'תוצרי פירוק של ההמוגלובין מסוננים בכליות ומופרשים בשתן', ok: true, why: 'בגלל ריכוזם הגבוה בזמן המוליזה.' }, { t: 'הכליות מייצרות פיגמנט חדש', why: 'מדובר בתוצרי פירוק מהדם.' }, { t: 'רק התייבשות', why: 'התייבשות לא מסבירה צבע כהה כזה.' }] },
+        { q: 'במצב של המוליזה מוגברת, איזה בילירובין עולה בדם?', tag: 'bili_path', options: [
+          { t: 'בילירובין לא ישיר, שנוצר מההֶם לפני שהוא מגיע לכבד', ok: true, why: 'הכבד לא מספיק לעבד את כולו.' },
+          { t: 'בילירובין ישיר, כי הכבד מעבד יותר מדי בבת אחת', why: 'הישיר נוצר בכבד; הבעיה בהמוליזה היא עודף ייצור לפני הכבד.' },
+          { t: 'שני הסוגים באותה מידה, כי הכבד חסום', why: 'הכבד תקין; העלייה היא בעיקר בלא ישיר.' },
+          { t: 'אורובילינוגן בלבד, כי חיידקי המעי פעילים יותר', why: 'גם הוא עולה, אך הממצא העיקרי בדם הוא הבילירובין הלא ישיר.' }] },
+        { q: 'מדוע מופיעה צהבת באנמיה המוליטית?', tag: 'bili_path', options: [
+          { t: 'הכבד מוצף בבילירובין מעבר ליכולתו, והעודף נצבר ברקמות', ok: true, why: 'כך הבילירובין הלא ישיר מצהיב את העור והלחמיות.' },
+          { t: 'הכבד נפגע מההמוליזה ומפסיק לעבד בילירובין', why: 'הכבד תקין, אך הוצף.' },
+          { t: 'דרכי המרה נחסמות, והבילירובין חוזר לדם', why: 'זו צהבת חסימתית, ולא צהבת המוליטית.' },
+          { t: 'הברזל שמשתחרר מהכדוריות מצהיב את העור', why: 'הצהבת נובעת מבילירובין, לא מברזל.' }] },
+        { q: 'מה קורה לברזל שמשתחרר בפירוק ההֶם?', tag: 'bili_path', options: [
+          { t: 'הוא נקשר לטרנספרין ומוחזר למח העצם, או נאגר בכבד', ok: true, why: 'מיחזור הברזל מספק את רוב הברזל לייצור כדוריות.' },
+          { t: 'הוא הופך לבילירובין ומופרש ברובו בצואה', why: 'הבילירובין נוצר מההֶם בלי הברזל.' },
+          { t: 'הוא מופרש בשתן יחד עם תוצרי הפירוק של ההֶם', why: 'הברזל יקר ומוחזר ולא מופרש.' },
+          { t: 'הוא נהרס במקרופאג ונפלט מהגוף', why: 'הברזל אינו נהרס, ומיוחזר.' }] },
+        { q: 'למה השתן נעשה כהה (דמוי תה) בהמוליזה חריפה?', tag: 'bili_path', options: [
+          { t: 'תוצרי פירוק של ההמוגלובין מסוננים בכליות ומופרשים בשתן', ok: true, why: 'בגלל ריכוזם הגבוה בזמן המוליזה.' },
+          { t: 'בילירובין לא ישיר מסונן בקלות בכליות ומצבע את השתן', why: 'הבילירובין הלא ישיר קשור לאלבומין ולכן אינו מסונן.' },
+          { t: 'הכליות מייצרות פיגמנט חדש בתגובה לאנמיה', why: 'מדובר בתוצרי פירוק מהדם.' },
+          { t: 'התייבשות מרכזת את השתן, וזה כל ההסבר', why: 'התייבשות לא מסבירה צבע כהה כזה.' }] },
       ]);
     }
   },
@@ -969,21 +1121,26 @@ registerGame({
 
 /* ---------- 5. מסלולי ספיגה ---------- */
 registerGame({
-  id: 'a_absorb', part: 'A', sec: 'basics', icon: '🥗', title: 'ספיגה: מה עוזר ומה מפריע', desc: 'ברזל – מגבירים ומעכבים, ומסע B12 בגוף',
+  id: 'a_absorb', part: 'A', learned: [
+    'ויטמין C מגביר ספיגת ברזל. תה, קפה וחלב (סידן) מעכבים אותה.',
+    'ברזל מהצומח נספג פחות מברזל מהחי, ולכן צמחונים וטבעונים בסיכון.',
+    'B12 נספג בקצה המעי הדק רק בליווי הפקטור הפנימי מהקיבה.',
+    'בלי פקטור פנימי יש חוסר B12 גם בתזונה עשירה, והמאגר בכבד מאט את הופעת החוסר.'
+  ], sec: 'basics', icon: '🥗', title: 'ספיגה: מה עוזר ומה מפריע', desc: 'ברזל – מגבירים ומעכבים, ומסע B12 בגוף',
   teacherNote: 'שלב 1: מיון גורמים המשפיעים על ספיגת ברזל (לפי הספר). שלב 2: סידור מסלול ספיגת B12 עם הפקטור הפנימי.',
   mount(root, ctx) {
     root.insertAdjacentHTML('afterbegin', say('ארוחה בריאה היא לא תמיד ארוחה יעילה. אני הברזל – בואו נראה מה מעלה ומה מוריד את הספיגה שלי!', 'wink', 'iron'));
     let s1 = 0;
     const items = [
-      { e: '🍊', t: 'כוס מיץ תפוזים לצד הארוחה', b: 0, why: 'ויטמין C (בפירות הדר) משפר משמעותית את ספיגת הברזל, בעיקר ברזל מהצומח.' },
-      { e: '🍋', t: 'לימון סחוט על סלט עדשים', b: 0, why: 'ויטמין C משפר ספיגה של ברזל מהצומח.' },
-      { e: '🍊', t: 'אשכולית או תפוז אחרי כדור ברזל', b: 0, why: 'פירות הדר – ויטמין C – מסייעים בספיגה.' },
-      { e: '🍵', t: 'כוס תה לצד ארוחה עשירה בברזל', b: 1, why: 'תה מעכב את ספיגת הברזל. מומלץ להימנע ממנו כשעה לפני ואחרי ארוחה כזו.' },
+      { e: '🍊', t: 'מיץ תפוזים', b: 0, why: 'ויטמין C (בפירות הדר) משפר משמעותית את ספיגת הברזל, בעיקר ברזל מהצומח.' },
+      { e: '🍋', t: 'לימון על סלט עדשים', b: 0, why: 'ויטמין C משפר ספיגה של ברזל מהצומח.' },
+      { e: '🍓', t: 'תותים לצד כדור ברזל', b: 0, why: 'תותים עשירים בוויטמין C, שמסייע בספיגה.' },
+      { e: '🍵', t: 'תה עם הארוחה', b: 1, why: 'תה מעכב את ספיגת הברזל. מומלץ להימנע ממנו כשעה לפני ואחרי ארוחה כזו.' },
       { e: '☕', t: 'קפה עם הארוחה', b: 1, why: 'קפה מעכב ספיגת ברזל.' },
-      { e: '🥛', t: 'כוס חלב לצד כדור ברזל', b: 1, why: 'סידן ומוצרי חלב מעכבים את הספיגה.' },
-      { e: '🧀', t: 'גבינה צהובה לצד ארוחת בשר', b: 1, why: 'סידן במוצרי חלב מעכב ספיגת ברזל.' },
+      { e: '🥛', t: 'חלב לצד כדור ברזל', b: 1, why: 'סידן ומוצרי חלב מעכבים את הספיגה.' },
+      { e: '🧀', t: 'גבינה צהובה עם ארוחת בשר', b: 1, why: 'סידן במוצרי חלב מעכב ספיגת ברזל.' },
     ];
-    sortGame(root, { items, buckets: ['מגביר ספיגה', 'מעכב ספיגה'], tag: 'iron_absorb', onDone: p => { s1 = p; root.innerHTML = ''; stage2(); } });
+    binGame(root, { items, buckets: ['מגביר ספיגה ✅', 'מעכב ספיגה ⛔'], tag: 'iron_absorb', title: 'בחרו מוצר, ואז לחצו על התיבה שמתאימה לו', onDone: p => { s1 = p; root.innerHTML = ''; stage2(); } });
     function stage2() {
       root.insertAdjacentHTML('afterbegin', say('אני B12, ובלי המונית של הפקטור הפנימי אני לא מגיע לשום מקום…', 'think', 'b12') + fig('b12abs', 'ספיגת B12 (איור מהספר)'));
       const steps = ['ויטמין B12 משתחרר מהמזון בעזרת חומצת הקיבה ואנזימים',
@@ -999,7 +1156,12 @@ registerGame({
 
 /* ---------- 6. מפעל הכדוריות ---------- */
 registerGame({
-  id: 'a_factory', part: 'A', sec: 'basics', icon: '🏭', title: 'מפעל הכדוריות: ברזל, B12 ופולית', desc: 'שנו את חומרי הגלם וצפו בכדוריות ובמדדי הדם',
+  id: 'a_factory', part: 'A', learned: [
+    'חוסר ברזל: כדוריות קטנות וחיוורות (MCV נמוך, RDW גבוה).',
+    'חוסר B12 או פולית: כדוריות גדולות ופחות תאים (MCV גבוה).',
+    'שני חסרים יחד יכולים להסתיר זה את זה: MCV כמעט תקין ו-RDW גבוה מאוד.',
+    'תזונה צמחונית או טבעונית, וסת כבדה, היריון, צליאק וניתוחי קיבה: כל אחד מהם פוגע בחומר גלם אחר.'
+  ], sec: 'basics', icon: '🏭', title: 'מפעל הכדוריות: ברזל, B12 ופולית', desc: 'שנו את חומרי הגלם וצפו בכדוריות ובמדדי הדם',
   teacherNote: 'המודל איכותני: ברזל נמוך ← MCV ו-MCH נמוכים, RDW גבוה. B12 או פולית נמוכים ← MCV גבוה ומספר תאים נמוך. שניהם יחד ← MCV כמעט תקין עם RDW גבוה מאוד ("מלכודת"). ערכים להמחשה בלבד.',
   mount(root, ctx) {
     const S = { ir: 100, b12: 100, fol: 100 };
@@ -1012,7 +1174,7 @@ registerGame({
     ];
     const PRE = [
       ['🥕 צמחונית', { ir: 60, b12: 85, fol: 100 }, 'תזונה צמחונית: ברזל מהצומח נספג פחות, ו-B12 קיים בעיקר במזון מהחי.'],
-      ['🌱 טבעונית בלי תוסף', { ir: 55, b12: 20, fol: 100 }, 'טבעונים שלא נוטלים תוסף B12 בסיכון גבוה לחוסר (המאגר בכבד נגמר אחרי שנים).'],
+      ['🌱 טבעונית קפדנית', { ir: 55, b12: 20, fol: 100 }, 'B12 נמצא כמעט רק במוצרי חי. בלי תוסף המאגר בכבד נגמר אחרי שנים, ומתפתח חוסר.'],
       ['🩸 וסת כבדה', { ir: 25, b12: 100, fol: 100 }, 'איבוד דם כרוני מרוקן את מאגרי הברזל.'],
       ['🤰 היריון + תזונה דלה', { ir: 50, b12: 100, fol: 35 }, 'דרישה מוגברת לברזל ולפולית, בלי תוספים וירקות ירוקים.'],
       ['🏥 אחרי ניתוח קיבה', { ir: 60, b12: 5, fol: 100 }, 'בלי פקטור פנימי אי אפשר לספוג B12, גם אם אוכלים נכון.'],
@@ -1029,39 +1191,65 @@ registerGame({
       return { mcv, mchc, mch, hb, count, rdw, ret, I, D };
     }
     root.insertAdjacentHTML('afterbegin', say('ברוכים הבאים למפעל! זה קו הייצור של מח העצם. שנו את אספקת חומרי הגלם וראו איזה כדוריות יוצאות 🏭', 'wow'));
-    const main = el('<div class="card"></div>'); root.appendChild(main);
-    const mis = el('<div class="card"></div>'); root.appendChild(mis);
-    const nextBox = el('<div></div>'); root.appendChild(nextBox);
+    const mis = el('<div class="card"></div>'), ctl = el('<div class="card"></div>'), res = el('<div class="card"></div>'), img = el('<div class="card"></div>'), nextBox = el('<div></div>');
+    root.append(mis, ctl, res, img, nextBox);
     let story = '';
-    function draw() {
+    const SL = [['ir', '🔩 ברזל', 'ברזל זמין לבניית המוגלובין'], ['b12', '🥩 ויטמין B12', 'לסינתזת DNA ולמיאלין'], ['fol', '🥬 חומצה פולית (B9)', 'לסינתזת DNA']];
+    function drawCtl() {
+      ctl.innerHTML = `<h3>חומרי גלם</h3>
+        ${SL.map(([k, t]) => `<div class="slider"><label><span>${t}</span><b class="ltr" data-v="${k}">${S[k]}%</b></label><input type="range" min="0" max="100" step="5" value="${S[k]}" data-k="${k}"></div>`).join('')}
+        <p class="muted small" style="margin:8px 0 4px">או נסו מצב מהחיים:</p>
+        <div class="row">${PRE.map((p, i) => `<button class="btn sm" data-pre="${i}">${p[0]}</button>`).join('')}<button class="btn sm ghost" data-pre="-1">↺ איפוס</button></div>
+        ${story ? `<div class="explain" id="story">${story}</div>` : ''}`;
+    }
+    function drawRes() {
       const m = model(S);
       const verdict = m.hb >= 12 ? ['תקין', 'g'] : m.mcv < 80 ? ['אנמיה מיקרוציטית – חשד לחוסר ברזל', 'r'] : m.mcv > 100 ? ['אנמיה מאקרוציטית – חשד לחוסר B12 או פולית', 'r'] : m.rdw > 18 ? ['MCV תקין אבל RDW גבוה מאוד – שני חסרים ביחד?', 'y'] : ['אנמיה נורמוציטית', 'y'];
       const fl = (k, v) => labFlag(k, v, 'F');
-      main.innerHTML = `<div class="smear">${cellsStrip({ mcv: m.mcv, mchc: m.mchc, aniso: clamp((m.rdw - 12) / 38, .04, .42), count: clamp(m.count / 4.8, .35, 1), macroOval: m.D < .6, seed: 5 })}</div>
-        <div class="row" style="margin:8px 0"><span class="pill ${verdict[1]}">${verdict[0]}</span></div>
-        <div class="kpi"><div class="${fl('Hb', m.hb)}"><b>${m.hb.toFixed(1)}</b><span>המוגלובין g/dL</span></div><div class="${fl('MCV', m.mcv)}"><b>${Math.round(m.mcv)}</b><span>MCV fL</span></div><div class="${fl('RDW', m.rdw)}"><b>${m.rdw.toFixed(1)}</b><span>RDW %</span></div><div class="${fl('RBC', m.count)}"><b>${m.count.toFixed(1)}</b><span>RBC M/µL</span></div><div class="${fl('RET', m.ret)}"><b>${m.ret.toFixed(1)}</b><span>רטיקולוציטים %</span></div></div>
-        <h3>חומרי גלם</h3>
-        ${[['ir', '🔩 ברזל', 'ברזל זמין לבניית המוגלובין'], ['b12', '🥩 ויטמין B12', 'לסינתזת DNA ולמיאלין'], ['fol', '🥬 חומצה פולית (B9)', 'לסינתזת DNA']].map(([k, t]) => `<div class="slider"><label><span>${t}</span><b class="ltr">${S[k]}%</b></label><input type="range" min="0" max="100" step="5" value="${S[k]}" data-k="${k}"></div>`).join('')}
-        <div class="row" style="margin-top:6px">${PRE.map((p, i) => `<button class="btn sm" data-pre="${i}">${p[0]}</button>`).join('')}<button class="btn sm ghost" data-pre="-1">↺ איפוס</button></div>
-        ${story ? `<div class="explain">${story}</div>` : ''}`;
+      res.innerHTML = `<h3>תוצאות</h3><div class="row" style="margin:6px 0"><span class="pill ${verdict[1]}">${verdict[0]}</span></div>
+        <div class="kpi"><div class="${fl('Hb', m.hb)}"><b>${m.hb.toFixed(1)}</b><span>המוגלובין g/dL</span></div><div class="${fl('MCV', m.mcv)}"><b>${Math.round(m.mcv)}</b><span>MCV fL</span></div><div class="${fl('RDW', m.rdw)}"><b>${m.rdw.toFixed(1)}</b><span>RDW %</span></div><div class="${fl('RBC', m.count)}"><b>${m.count.toFixed(1)}</b><span>RBC M/µL</span></div><div class="${fl('RET', m.ret)}"><b>${m.ret.toFixed(1)}</b><span>רטיקולוציטים %</span></div></div>`;
+      img.innerHTML = `<h3>כך נראות הכדוריות</h3><div class="smear">${cellsStrip({ mcv: m.mcv, mchc: m.mchc, aniso: clamp((m.rdw - 12) / 38, .04, .42), count: clamp(m.count / 4.8, .35, 1), macroOval: m.D < .6, seed: 5 })}</div>`;
       MIS.forEach(x => { if (!done.has(x.id) && x.ok(m, S)) { done.add(x.id); toast('משימה הושלמה! 🎉'); confetti(10); } });
-      mis.innerHTML = `<h3>משימות (${done.size}/4)</h3>${MIS.map(x => `<div class="row" style="margin:6px 0"><span style="font-size:1.3rem">${done.has(x.id) ? '✅' : '⬜'}</span><span class="${done.has(x.id) ? 'muted' : ''}">${x.t}</span></div>`).join('')}`;
+      mis.innerHTML = `<h3>🎯 משימות (${done.size}/4)</h3>${MIS.map(x => `<div class="row" style="margin:6px 0"><span style="font-size:1.3rem">${done.has(x.id) ? '✅' : '⬜'}</span><span class="${done.has(x.id) ? 'muted' : ''}">${x.t}</span></div>`).join('')}`;
       nextBox.innerHTML = done.size >= 4 ? '<button class="btn primary block" id="go">כל המשימות הושלמו – למבחן 🏁</button>' : '';
       if (done.size >= 4) $('#go', nextBox).onclick = quiz;
-      if (done.size === 4 && !mis.dataset.k) { mis.dataset.k = 1; }
     }
-    main.addEventListener('input', e => { const r = e.target.closest('input[type=range]'); if (!r) return; S[r.dataset.k] = +r.value; story = ''; const y = window.scrollY; const k = r.dataset.k; draw(); window.scrollTo(0, y); const n = $(`input[data-k=${k}]`, main); n && n.focus(); });
-    main.addEventListener('click', e => { const b = e.target.closest('[data-pre]'); if (!b) return; const i = +b.dataset.pre; if (i < 0) { Object.assign(S, { ir: 100, b12: 100, fol: 100 }); story = ''; } else { Object.assign(S, PRE[i][1]); story = '📖 ' + PRE[i][2]; } draw(); });
-    draw();
+    ctl.addEventListener('input', e => { const r = e.target.closest('input[type=range]'); if (!r) return; S[r.dataset.k] = +r.value; $(`[data-v=${r.dataset.k}]`, ctl).textContent = r.value + '%'; if (story) { story = ''; const st = $('#story', ctl); st && st.remove(); } drawRes(); });
+    ctl.addEventListener('click', e => { const b = e.target.closest('[data-pre]'); if (!b) return; const i = +b.dataset.pre; if (i < 0) { Object.assign(S, { ir: 100, b12: 100, fol: 100 }); story = ''; } else { Object.assign(S, PRE[i][1]); story = '📖 ' + PRE[i][2]; } drawCtl(); drawRes(); });
+    drawCtl(); drawRes();
     function quiz() {
       root.innerHTML = '';
       runQuiz(root, ctx, [
-        { q: 'מה קורה לגודל הכדוריות (MCV) ולצבען בחוסר ברזל?', tag: 'nutrients', options: [{ t: 'קטנות (מיקרוציטיות) וחיוורות (היפוכרומיות)', ok: true, why: 'בלי ברזל אי אפשר לבנות מספיק המוגלובין, והתאים נוצרים קטנים יותר.' }, { t: 'גדולות וצפופות', why: 'זה אופייני לחוסר ויטמינים.' }, { t: 'תקינות לגמרי', why: 'חוסר ברזל משפיע ישירות על ההמוגלובין.' }] },
-        { q: 'מדוע חוסר B12 או חומצה פולית יוצר כדוריות גדולות (מאקרוציטים)?', tag: 'nutrients', options: [{ t: 'סינתזת ה-DNA נפגעת: הגרעין "תקוע" בשלב לא בשל בעוד הציטופלזמה ממשיכה לגדול', ok: true, why: 'רוב התאים הפגומים נהרסים במח העצם עוד לפני שיצאו לדם.' }, { t: 'חוסר ברזל מנפח את התאים', why: 'חוסר ברזל גורם לתאים קטנים.' }, { t: 'ה-EPO גבוה מדי', why: 'הסיבה היא פגיעה בשכפול DNA.' }] },
-        { q: 'חסרה לכדוריות רק חומצה פולית. איזה ויטמין אחר גורם בעקיפין לאותו מצב?', tag: 'nutrients', options: [{ t: 'B12 – הוא ממחזר את הפולית לצורתה הפעילה', ok: true, why: 'חוסר B12 גורם לחוסר פולית פעילה, ושניהם עוצרים את שכפול ה-DNA.' }, { t: 'ויטמין C', why: 'ויטמין C מסייע לספיגת ברזל.' }, { t: 'ויטמין K', why: 'קשור לקרישה.' }] },
-        { q: 'למה חוסר ב-B12 מתפתח לעיתים לאט מאוד?', tag: 'b12_absorb', options: [{ t: 'מאגר גדול בכבד שמספיק ל-3–6 שנים', ok: true, why: 'לכן הסימפטומים מופיעים רק אחרי זמן ארוך.' }, { t: 'כי B12 לא חיוני', why: 'הוא חיוני, גם לעצבים.' }, { t: 'כי מח העצם מייצר B12', why: 'הגוף לא מייצר B12.' }] },
-        { q: 'אישה אחרי ניתוח לעקיפת קיבה אוכלת בשר ודגים ובכל זאת מפתחת חוסר B12. למה?', tag: 'b12_absorb', options: [{ t: 'אין פקטור פנימי מהקיבה, ולכן B12 לא נספג', ok: true, why: 'הפקטור הפנימי חיוני לספיגה בקצה המעי הדק.' }, { t: 'בשר ודגים לא מכילים B12', why: 'הם מקור עשיר ל-B12.' }, { t: 'היא סובלת מחוסר ברזל', why: 'לא קשור לספיגת B12.' }] },
-        { q: 'איזה מדד הוא הרגיש והספציפי ביותר לחוסר ברזל?', tag: 'nutrients', options: [{ t: 'פריטין נמוך', ok: true, why: 'הוא משקף ישירות את התרוקנות מאגרי הברזל.' }, { t: 'RDW נמוך', why: 'ב-חוסר ברזל ה-RDW גבוה.' }, { t: 'MCV גבוה', why: 'MCV נמוך בחוסר ברזל.' }] },
+        { q: 'מה קורה לגודל הכדוריות ולצבען בחוסר ברזל?', tag: 'nutrients', options: [
+          { t: 'קטנות וחיוורות, כי חסר ברזל לבניית ההמוגלובין', ok: true, why: 'בלי ברזל אי אפשר לבנות מספיק המוגלובין, והתאים נוצרים קטנים.' },
+          { t: 'גדולות וחיוורות, כי התאים אוגרים יותר נוזל', why: 'גדולות מאפיין חוסר ויטמינים.' },
+          { t: 'קטנות אך כהות, כי ההמוגלובין מצטבר בתא', why: 'ההמוגלובין בתאים אלה נמוך ולכן הם חיוורים.' },
+          { t: 'תקינות בגודלן, כי החוסר משפיע רק על מספר התאים', why: 'חוסר ברזל משפיע ישירות על ההמוגלובין ועל גודל התא.' }] },
+        { q: 'מדוע חוסר B12 או חומצה פולית יוצר כדוריות גדולות (מאקרוציטים)?', tag: 'nutrients', options: [
+          { t: 'שכפול ה-DNA נפגע, והציטופלזמה ממשיכה לגדול בעוד הגרעין מתעכב', ok: true, why: 'רוב התאים הפגומים נהרסים במח העצם עוד לפני שיצאו לדם.' },
+          { t: 'בניית ההמוגלובין מואצת, ולכן התא מתנפח', why: 'הבעיה היא ב-DNA ולא בהמוגלובין.' },
+          { t: 'רמת ה-EPO הגבוהה גורמת לתאים להתחלק פחות', why: 'EPO מגביר ייצור, והסיבה היא חוסר בחומרי גלם.' },
+          { t: 'קרום התא נעשה דק ונמתח, ולכן התא גדל', why: 'הקרום תקין; הפגיעה היא בהתחלקות הגרעין.' }] },
+        { q: 'איזה ויטמין נוסף נחוץ כדי לשמור על פולית בצורתה הפעילה?', tag: 'nutrients', options: [
+          { t: 'B12, שמסייע בהפיכת הפולית לצורתה הפעילה', ok: true, why: 'חוסר B12 גורם לחוסר פולית פעילה, ושניהם עוצרים את שכפול ה-DNA.' },
+          { t: 'ויטמין C, שמסייע בספיגת הפולית מהמעי', why: 'ויטמין C מסייע בעיקר בספיגת ברזל.' },
+          { t: 'ויטמין K, שמשתתף בסינתזת ה-DNA', why: 'ויטמין K קשור לקרישת דם.' },
+          { t: 'ויטמין A, שנחוץ לבשלות הכדוריות', why: 'ויטמין A אינו קשור לחילוף הפולית.' }] },
+        { q: 'למה חוסר ב-B12 מתפתח לעיתים לאט מאוד?', tag: 'b12_absorb', options: [
+          { t: 'יש מאגר גדול בכבד שמספיק לשנים רבות', ok: true, why: 'המאגר מספיק ל-3–6 שנים, ולכן הסימפטומים מופיעים רק אחרי זמן ארוך.' },
+          { t: 'הגוף מייצר B12 בעצמו בכמויות קטנות', why: 'הגוף אינו מייצר B12.' },
+          { t: 'הצורך בו נמוך, והוא נצרך רק פעם בשנה', why: 'הוא נצרך כל הזמן, אך בכמויות זעירות.' },
+          { t: 'מח העצם משתמש בו רק כשהכדוריות מתחדשות לאט', why: 'הוא נחוץ לייצור רציף של תאים חדשים.' }] },
+        { q: 'אישה אחרי ניתוח לעקיפת קיבה אוכלת בשר ודגים ובכל זאת מפתחת חוסר B12. למה?', tag: 'b12_absorb', options: [
+          { t: 'אין פקטור פנימי מהקיבה, ולכן B12 לא נספג בקצה המעי', ok: true, why: 'הפקטור הפנימי חיוני לספיגה בקצה המעי הדק.' },
+          { t: 'הבשר והדגים מתפרקים מהר מדי, ו-B12 יוצא בצואה', why: 'בשר ודגים הם מקור עשיר ל-B12; הבעיה בספיגה.' },
+          { t: 'הניתוח גורם להרס כדוריות, ולכן הצורך ב-B12 עולה', why: 'הניתוח אינו גורם להרס כדוריות.' },
+          { t: 'הקיבה המוקטנת מפרישה יותר חומצה והורסת את הוויטמין', why: 'ההפרשה בדרך כלל יורדת ואינה הורסת את B12.' }] },
+        { q: 'איזה מדד הוא הרגיש והספציפי ביותר לחוסר ברזל?', tag: 'nutrients', options: [
+          { t: 'פריטין נמוך, כי הוא משקף את מאגרי הברזל', ok: true, why: 'הוא משקף ישירות את התרוקנות מאגרי הברזל.' },
+          { t: 'RDW נמוך, כי כל התאים נעשים דומים בגודלם', why: 'בחוסר ברזל ה-RDW גבוה.' },
+          { t: 'טרנספרין נמוך, כי הגוף מפסיק לייצר חלבון הובלה', why: 'בחוסר ברזל הטרנספרין גבוה.' },
+          { t: 'ברזל בסרום בלבד, כי הוא יציב לאורך היום', why: 'ברזל בסרום משתנה מאוד ואינו המדד המומלץ.' }] },
       ], { after: fig('mega_diet', 'מניעה: מקורות B12 ופולית (איור מהספר)') });
     }
   },
@@ -1069,7 +1257,12 @@ registerGame({
 
 /* ---------- 7. בנק הדם ---------- */
 registerGame({
-  id: 'a_bank', part: 'A', sec: 'basics', icon: '🏥', title: 'בנק הדם: ABO ו-Rh', desc: 'התאימו יחידת דם בטוחה, ופתרו את תעלומת ההיריון',
+  id: 'a_bank', part: 'A', learned: [
+    'לבעל סוג O יש נוגדנים נגד A ו-B. לבעל AB אין נוגדנים כאלה.',
+    'מקבל Rh שלילי לא מקבל Rh חיובי. במצב חירום בלי סוג ידוע נותנים O שלילי.',
+    'אם Rh שלילית נחשפת לדם עובר Rh חיובי, היא מפתחת נוגדנים שיפגעו בהיריון הבא.',
+    'מניעה: זריקת anti-D בשבוע 28 ובתוך 72 שעות אחרי הלידה.'
+  ], sec: 'basics', icon: '🏥', title: 'בנק הדם: ABO ו-Rh', desc: 'התאימו יחידת דם בטוחה, ופתרו את תעלומת ההיריון',
   teacherNote: 'כלל: נוגדנים טבעיים נגד האנטיגן הזר (A,B). עירוי בטוח: אנטיגני התורם צריכים להיות מוכרים כ"עצמי" אצל המקבל. Rh שלילי לא יקבל Rh חיובי. במצב חירום (סוג לא ידוע) – O שלילי.',
   mount(root, ctx) {
     const ABO = ['O', 'A', 'B', 'AB'];
@@ -1087,28 +1280,42 @@ registerGame({
     }
     const rounds = Array.from({ length: 9 }, (_, k) => makeRound(k));
     let i = 0, right = 0;
-    root.insertAdjacentHTML('afterbegin', say('כאן בנק הדם – כל טעות היא (חלילה) מסוכנת, אז טוב שזה משחק. 😅 בחרו לכל מטופל יחידה שמתאימה לו.', 'think'));
+    root.insertAdjacentHTML('afterbegin', say('כאן בנק הדם – כל טעות היא (חלילה) מסוכנת, אז טוב שזה משחק. 😅 לכל מטופל יש לפעמים יותר מיחידה מתאימה אחת. סמנו את כולן.', 'think'));
     const legend = el(`<div class="card soft small row">${bloodCellABO('AB', true, 38)}<span>🔵 אנטיגן A · 🟡 אנטיגן B · 🟢 אנטיגן D (Rh חיובי)</span></div>`); root.appendChild(legend);
     const host = el('<div></div>'); root.appendChild(host);
     function draw() {
       if (i >= rounds.length) { rhStage(); return; }
       const R = rounds[i], p = R.pt; host.innerHTML = '';
+      const isOk = u => R.emergency ? (u.abo === 'O' && !u.rh) : safe(u, p);
       const c = el(`<div class="card"><div class="row sp small muted"><span>מטופל ${i + 1} מתוך ${rounds.length}</span><span>✓ ${right}</span></div><div class="bar" style="margin:8px 0"><i style="width:${100 * i / rounds.length}%"></i></div></div>`); host.appendChild(c);
-      if (R.emergency) c.insertAdjacentHTML('beforeend', `<div class="patient-head"><div class="avatar">🚑</div><div><h3 style="margin:0">חירום! דימום מסיבי</h3><div class="muted">סוג הדם של המטופל עדיין לא ידוע, ואין זמן לבדוק. איזו יחידה תבחרו?</div></div></div>`);
+      if (R.emergency) c.insertAdjacentHTML('beforeend', `<div class="patient-head"><div class="avatar">🚑</div><div><h3 style="margin:0">חירום! דימום מסיבי</h3><div class="muted">סוג הדם של המטופל עדיין לא ידוע, ואין זמן לבדוק.</div></div></div>`);
       else c.insertAdjacentHTML('beforeend', `<div class="patient-head">${bloodCellABO(p.abo, p.rh, 64)}<div><h3 style="margin:0">מטופל/ת עם סוג דם ${lbl(p)}</h3><div class="muted small">נוגדנים טבעיים: ${anti(p.abo)}${p.rh ? '' : ' · Rh שלילי – לא יקבל Rh חיובי'}</div></div></div>`);
-      c.insertAdjacentHTML('beforeend', `<div class="q" style="margin-top:12px">איזו יחידת דם תבחרו?</div><div class="grid" id="un">${R.units.map((u, k) => `<button class="tile ${IS_TEACHER && (R.emergency ? (u.abo === 'O' && !u.rh) : safe(u, p)) ? 't-ok' : ''}" data-k="${k}" style="align-items:center;min-height:120px">${bloodCellABO(u.abo, u.rh, 56)}<span class="t">יחידה ${lbl(u)}</span></button>`).join('')}</div><div id="fb"></div>`);
+      c.insertAdjacentHTML('beforeend', `<div class="q" style="margin-top:12px">אילו יחידות דם מתאימות למטופל? <span class="muted small">(אפשר לסמן יותר מאחת, ואז ללחוץ "סיימתי")</span></div><div class="grid" id="un">${R.units.map((u, k) => `<button class="tile ${IS_TEACHER && isOk(u) ? 't-ok' : ''}" data-k="${k}" style="align-items:center;min-height:120px">${bloodCellABO(u.abo, u.rh, 56)}<span class="t">יחידה ${lbl(u)}</span></button>`).join('')}</div><button class="btn primary block" id="dn" style="margin-top:12px" disabled>סיימתי ✔</button><div id="fb"></div>`);
+      const sel = new Set();
+      const why1 = u => !aboOK(u.abo, p.abo) ? `יחידה ${lbl(u)}: למקבל מסוג ${p.abo} יש נוגדנים נגד ${p.abo === 'O' ? 'A ו-B' : p.abo === 'A' ? 'B' : 'A'}, ותאי התורם נושאים אנטיגן זר ⇒ הצמתה והמוליזה חריפה.` : `יחידה ${lbl(u)}: המקבל Rh שלילי, ולכן לא נותנים לו Rh חיובי. אנטיגן D יעורר תגובה חיסונית.`;
       c.addEventListener('click', e => {
-        const b = e.target.closest('[data-k]'); if (!b || c.dataset.d) return; c.dataset.d = 1;
-        const u = R.units[+b.dataset.k]; const ok = R.emergency ? (u.abo === 'O' && !u.rh) : safe(u, p);
-        $$('[data-k]', c).forEach(x => { x.disabled = true; const uu = R.units[+x.dataset.k]; const s = R.emergency ? (uu.abo === 'O' && !uu.rh) : safe(uu, p); x.style.borderColor = s ? 'var(--good)' : ''; x.style.background = s ? 'var(--good-soft)' : ''; });
-        let why = '';
-        if (ok) why = R.emergency ? 'O שלילי הוא "התורם האוניברסלי": אין עליו אנטיגני A, B או D, ולכן לא תהיה תגובה חיסונית אצל אף מקבל.' : 'מצוין! אנטיגני התורם מוכרים כ"עצמי" אצל המקבל.';
-        else if (R.emergency) why = 'במצב חירום בוחרים O שלילי – אין עליו אנטיגנים A, B ו-D, ולכן הוא מתאים לכולם.';
-        else if (!aboOK(u.abo, p.abo)) { Store.mistake('abo_rules'); why = `למקבל מסוג ${p.abo} יש נוגדנים נגד ${p.abo === 'O' ? 'A ו-B' : p.abo === 'A' ? 'B' : 'A'}. תאי התורם נושאים אנטיגן זר ⇒ הצמתה והמוליזה חריפה.`; }
-        else { Store.mistake('rh_pregnancy'); why = 'המקבל Rh שלילי ולכן לא נותנים לו Rh חיובי – אנטיגן D יעורר תגובה חיסונית.'; }
-        if (!ok && R.emergency) Store.mistake('abo_rules');
+        if (c.dataset.d) return;
+        const b = e.target.closest('[data-k]');
+        if (b) { const k = +b.dataset.k; if (sel.has(k)) sel.delete(k); else sel.add(k); b.classList.toggle('pick', sel.has(k)); $('#dn', c).disabled = !sel.size; return; }
+        if (!e.target.closest('#dn') || !sel.size) return;
+        c.dataset.d = 1; $('#dn', c).remove();
+        const bad = [], missed = [];
+        $$('[data-k]', c).forEach(x => {
+          const k = +x.dataset.k, u = R.units[k], s = isOk(u); x.disabled = true; x.classList.remove('pick');
+          x.style.borderColor = s ? 'var(--good)' : sel.has(k) ? 'var(--bad)' : ''; x.style.background = s ? 'var(--good-soft)' : sel.has(k) ? 'var(--bad-soft)' : '';
+          if (sel.has(k) && !s) bad.push(u); if (!sel.has(k) && s) missed.push(u);
+        });
+        const ok = !bad.length && !missed.length; let why = '';
+        if (ok) why = R.emergency ? 'O שלילי הוא "התורם האוניברסלי": אין עליו אנטיגני A, B או D, ולכן לא תהיה תגובה חיסונית אצל אף מקבל.' : 'מצוין! כל היחידות שבחרתם בטוחות, ולא פספסתם אף יחידה מתאימה.';
+        else {
+          if (R.emergency) { Store.mistake('abo_rules'); why = 'במצב חירום בוחרים O שלילי בלבד – אין עליו אנטיגנים A, B ו-D, ולכן הוא מתאים לכולם.'; }
+          else {
+            if (bad.length) { bad.forEach(u => { Store.mistake(!aboOK(u.abo, p.abo) ? 'abo_rules' : 'rh_pregnancy'); }); why += '🚨 יחידה לא בטוחה נבחרה:<br>' + bad.map(why1).join('<br>') + '<br>'; }
+            if (missed.length) why += '➕ גם יחידה זו הייתה מתאימה: ' + missed.map(lbl).join(', ') + '.';
+          }
+        }
         if (ok) right++;
-        $('#fb', c).innerHTML = `<div class="explain ${ok ? 'good' : 'bad'}">${ok ? '✅ ' : '🚨 '}${why}</div><button class="btn primary block" id="nx" style="margin-top:10px">הבא ←</button>`;
+        $('#fb', c).innerHTML = `<div class="explain ${ok ? 'good' : 'bad'}">${ok ? '✅ ' : ''}${why}</div><button class="btn primary block" id="nx" style="margin-top:10px">הבא ←</button>`;
         $('#nx', c).onclick = () => { i++; draw(); };
       });
     }
@@ -1116,16 +1323,40 @@ registerGame({
     function rhStage() {
       host.innerHTML = ''; legend.remove();
       const base = Math.round(100 * right / rounds.length);
-      host.insertAdjacentHTML('beforeend', say('עכשיו לחלק הדרמטי: Rh והיריון. תעלומה שלמה במשפחה אחת…', 'wow') + fig('rh', 'אי-התאמת Rh בין אם לעובר (איור מהספר)'));
+      host.insertAdjacentHTML('beforeend', say('עכשיו לחלק הדרמטי: Rh והיריון. תעלומה שלמה במשפחה אחת…', 'wow'));
       const wrap = { ...ctx, finish: (p, ex) => ctx.finish(Math.round((base + p) / 2), ex) };
       runQuiz(host, wrap, [
-        { q: 'אישה Rh שלילי בהיריון עם עובר Rh חיובי (שירש את זה מהאב). מתי מערכת החיסון שלה נחשפת לדם העובר?', tag: 'rh_pregnancy', options: [{ t: 'במיוחד בלידה, כשכמות קטנה של דם עוברי חוצה לשליה ונכנסת למחזור האם', ok: true, why: 'האם מזהה את אנטיגן D כגוף זר.' }, { t: 'אף פעם – הדם לא מתערבב', why: 'כמות קטנה של דם עוברי כן חוצה.' }, { t: 'רק אחרי הגיל 40', why: 'הגיל לא רלוונטי.' }] },
-        { q: 'מה קורה בהיריון הראשון?', tag: 'rh_pregnancy', options: [{ t: 'לרוב התגובה לא מספיקה לפגוע בעובר, אבל נוצר זיכרון חיסוני', ok: true, why: 'הבעיה המרכזית היא "הזיכרון החיסוני" של האם.' }, { t: 'העובר תמיד נפגע קשה', why: 'בהיריון הראשון לרוב לא.' }, { t: 'לא קורה כלום ולא יקרה לעולם', why: 'נוצר זיכרון שיפעל בהיריון הבא.' }] },
-        { q: 'בהיריון הבא עם עובר Rh חיובי, ללא מניעה – מה יקרה?', tag: 'rh_pregnancy', options: [{ t: 'נוגדני Anti-D של האם חוצים את השליה ותוקפים את כדוריות העובר – אנמיה המוליטית של היילוד', ok: true, why: 'מצב מסכן חיים הקרוי מחלה המוליטית של היילוד.' }, { t: 'העובר ייצר נוגדנים נגד האם', why: 'הכיוון הפוך.' }, { t: 'האם תפתח אנמיה חרמשית', why: 'אין קשר.' }] },
-        { q: 'איך מונעים את הבעיה?', tag: 'rh_pregnancy', options: [{ t: 'זריקת נוגדני Anti-D מוכנים מראש (בשבוע 28 ובתוך 72 שעות אחרי הלידה): הם מנטרלים את הכדוריות העובריות לפני שמערכת החיסון של האם מפתחת זיכרון', ok: true, why: 'המטרה: לא לתת לאם להתחסן.' }, { t: 'עירוי דם מהאב', why: 'זה יחמיר.' }, { t: 'ברזל בזריקות', why: 'לא קשור.' }] },
-        { q: 'האם יכולה להיווצר אותה בעיה אם האם Rh חיובי והעובר Rh שלילי?', tag: 'rh_pregnancy', options: [{ t: 'לא – האם מזהה את אנטיגן D כ"עצמי", אין לה תגובה נגד עובר Rh שלילי', ok: true, why: 'הבעיה נוצרת רק כשהעובר נושא אנטיגן שהאם חסרה.' }, { t: 'כן, תמיד', why: 'האם שלילית היא זו שמפתחת נוגדנים נגד D.' }] },
-        { q: 'שתי כדוריות: אחת מסוג A ואחת מסוג B. למי יש נוגדנים נגד שתיהן באופן טבעי?', tag: 'abo_rules', fig: 'abo', figCap: 'אנטיגנים ונוגדנים במערכת ABO (איור מהספר)', options: [{ t: 'לבעל סוג דם O', ok: true, why: 'אין לו אנטיגנים A ו-B ולכן מפתח נוגדנים נגד שניהם.' }, { t: 'לבעל סוג דם AB', why: 'הוא מכיר את שניהם כעצמי.' }, { t: 'לאף אחד', why: 'בעלי סוג O כן.' }] },
-      ]);
+        { q: 'אישה Rh שלילית בהיריון עם עובר Rh חיובי (שירש זאת מהאב). מתי מערכת החיסון שלה נחשפת בעיקר לדם העובר?', tag: 'rh_pregnancy', options: [
+          { t: 'בלידה, כשכמות קטנה של דם עוברי חוצה את השליה', ok: true, why: 'האם מזהה את אנטיגן D כגוף זר.' },
+          { t: 'לאורך כל ההיריון, כשדם העובר מתערבב עם דם האם', why: 'הדם אינו מתערבב; בדרך כלל רק כמות קטנה חוצה, בעיקר בלידה.' },
+          { t: 'בהנקה, כשכדוריות העובר עוברות בחלב', why: 'הנקה אינה חושפת את האם לדם העובר.' },
+          { t: 'בהפריה, כשהזרע נושא אנטיגן D', why: 'אנטיגן D נמצא על כדוריות הדם, לא על הזרע.' }] },
+        { q: 'מה קורה בדרך כלל בהיריון הראשון?', tag: 'rh_pregnancy', options: [
+          { t: 'העובר לרוב אינו נפגע, אך מערכת החיסון של האם יוצרת זיכרון', ok: true, why: 'הבעיה המרכזית היא "הזיכרון החיסוני" של האם.' },
+          { t: 'העובר נפגע קשה, כי לאם כבר יש נוגדנים מוכנים', why: 'בהיריון הראשון עדיין אין נוגדנים.' },
+          { t: 'אין תגובה חיסונית כלל, גם בהיריונות הבאים', why: 'נוצר זיכרון שיפעל בהיריון הבא.' },
+          { t: 'האם מפתחת אנמיה, כי העובר צורך את הכדוריות שלה', why: 'הבעיה נוגעת לנוגדנים, לא לצריכת כדוריות.' }] },
+        { q: 'בהיריון הבא עם עובר Rh חיובי, בלי טיפול מניעתי, מה צפוי?', tag: 'rh_pregnancy', options: [
+          { t: 'נוגדני anti-D של האם חוצים את השליה ופוגעים בכדוריות העובר', ok: true, why: 'מצב מסכן חיים הקרוי מחלה המוליטית של היילוד.' },
+          { t: 'העובר מפתח נוגדנים נגד דם האם ותוקף את כדוריותיה', why: 'הכיוון הפוך: נוגדני האם תוקפים את העובר.' },
+          { t: 'כדוריות העובר מייצרות עודף אנטיגן D ונהרסות מעצמן', why: 'ההרס נגרם מנוגדני האם.' },
+          { t: 'השליה נסתמת בגלל הצטברות נוגדנים בדם האם', why: 'הנוגדנים חוצים את השליה, ולא סותמים אותה.' }] },
+        { q: 'איך מונעים את הבעיה?', tag: 'rh_pregnancy', options: [
+          { t: 'זריקת anti-D לאם בשבוע 28 ואחרי הלידה, לנטרול כדוריות העובר', ok: true, why: 'המטרה: לנטרל את הכדוריות העובריות לפני שהאם מתחסנת. הזריקה בשבוע 28 ובתוך 72 שעות אחרי הלידה.' },
+          { t: 'זריקת anti-D לעובר בשבוע 28, לחיזוק מערכת החיסון שלו', why: 'הטיפול ניתן לאם, לא לעובר.' },
+          { t: 'עירוי דם Rh חיובי לאם, כדי שתתרגל לאנטיגן D', why: 'זה יגרום לה להתחסן, והמטרה הפוכה.' },
+          { t: 'טיפול בברזל לאם בכל היריון, למניעת אנמיה אצל העובר', why: 'ברזל אינו מונע הצטברות נוגדנים.' }] },
+        { q: 'האם יכולה להיווצר אותה בעיה אם האם Rh חיובית והעובר Rh שלילי?', tag: 'rh_pregnancy', options: [
+          { t: 'לא, כי האם מזהה את אנטיגן D כחלק מעצמה', ok: true, why: 'הבעיה נוצרת רק כשהעובר נושא אנטיגן שהאם חסרה.' },
+          { t: 'כן, כי העובר חסר אנטיגן D וגורם לאם לייצר נוגדנים', why: 'האם נושאת את אנטיגן D ולכן לא תתחסן נגדו.' },
+          { t: 'כן, אך רק בהיריון השני ואילך', why: 'אין מנגנון שיוצר נוגדנים נגד D אצל אם Rh חיובית.' },
+          { t: 'לא, כי העובר אינו מייצר כדוריות עד הלידה', why: 'כדוריות עובריות נוצרות כבר בשלבים מוקדמים.' }] },
+        { q: 'שתי כדוריות: אחת מסוג A ואחת מסוג B. למי יש נוגדנים טבעיים נגד שתיהן?', tag: 'abo_rules', fig: 'abo', figCap: 'אנטיגנים ונוגדנים במערכת ABO (איור מהספר)', options: [
+          { t: 'לבעל סוג דם O, שאין לו אנטיגן A או B', ok: true, why: 'אין לו אנטיגנים A ו-B ולכן מפתח נוגדנים נגד שניהם.' },
+          { t: 'לבעל סוג דם AB, שיש לו את שני האנטיגנים', why: 'הוא מכיר את שניהם כעצמי.' },
+          { t: 'לבעל סוג דם A, כי הוא מכיר רק את האנטיגן שלו', why: 'לבעל A יש נוגדנים נגד B בלבד.' },
+          { t: 'לאף סוג, כי נוגדנים נוצרים רק אחרי עירוי', why: 'הנוגדנים הטבעיים קיימים גם בלי עירוי.' }] },
+      ], { after: fig('rh', 'אי-התאמת Rh בין אם לעובר (איור מהספר)') });
     }
   },
 });
@@ -1136,7 +1367,11 @@ registerGame({
 
 /* ---------- 8. תסמינים ← מנגנון ---------- */
 registerGame({
-  id: 'a_symp', part: 'A', sec: 'anemia', icon: '🥱', title: 'מדוע האנמיה מרגישה ככה?', desc: 'התאימו כל תסמין למנגנון הפיזיולוגי שמאחוריו',
+  id: 'a_symp', part: 'A', learned: [
+    'כל תסמיני האנמיה נובעים מחוסר חמצן ברקמות ומניסיונות הגוף לפצות.',
+    'הלב והריאות מתאמצים (דופק מהיר, קוצר נשימה), והדם מוסט מהעור והגפיים לאיברים חיוניים (חיוורון, קור).',
+    'התסמינים אינם ייחודיים לסוג מסוים, ולכן אבחון דורש בדיקות דם.'
+  ], sec: 'anemia', icon: '🥱', title: 'מדוע האנמיה מרגישה ככה?', desc: 'התאימו כל תסמין למנגנון הפיזיולוגי שמאחוריו',
   teacherNote: 'כל התסמינים נובעים ממחסור בחמצן ברקמות ומניסיונות הגוף לפצות. 6 זוגות להתאמה.',
   mount(root, ctx) {
     root.insertAdjacentHTML('afterbegin', say('אנמיה היא לא מחלה – היא תסמין. ומה שאתם מרגישים נובע מפיזיולוגיה ברורה. בואו נחבר!', 'think') + fig('symptoms', 'תסמיני אנמיה (איור מהספר)'));
@@ -1205,17 +1440,23 @@ const ANEM_CARDS = {
 };
 const ARTOF = { ida: 'iron', mega: 'b12', hemo: 'spleen', acd: 'kidney', aplastic: 'wbc' };
 registerGame({
-  id: 'a_cards', part: 'A', sec: 'anemia', icon: '🗂️', title: 'כרטיסי האנמיות', desc: 'סיכום אינטראקטיבי של חמש האנמיות – מנגנון, גורמים, קליניקה, אבחון וטיפול',
+  id: 'a_cards', part: 'A', learned: [
+    'חוסר ברזל: מיקרוציטית, פריטין נמוך. מגלובלסטית: מאקרוציטית, חוסר B12 או פולית.',
+    'המוליטית: צהבת, רטיקולוציטים גבוהים. מחלה כרונית: פריטין תקין או גבוה. אפלסטית: פנציטופניה.',
+    'הטיפול תמיד מתחיל בגורם.'
+  ], sec: 'anemia', icon: '🗂️', title: 'כרטיסי האנמיות', desc: 'סיכום אינטראקטיבי של חמש האנמיות – מנגנון, גורמים, קליניקה, אבחון וטיפול',
   teacherNote: 'סיכום הלימוד לפי ספר המגמה. היחידה מסתיימת כשנפתחו כל חמשת הכרטיסים.',
   mount(root, ctx) {
-    const keys = ['ida', 'mega', 'hemo', 'acd', 'aplastic'], seen = new Set(['ida']);
+    const keys = ['ida', 'mega', 'hemo', 'acd', 'aplastic'], seen = new Set(['ida']), rev = new Set();
     let cur = 'ida', sec = 'mech';
     const SEC = [['mech', '⚙️ מנגנון'], ['causes', '🧩 גורמים'], ['clin', '🩺 קליניקה'], ['dx', '🧪 אבחון'], ['tx', '💊 טיפול'], ['comp', '⚠️ סיבוכים'], ['figs', '🖼️ איורים']];
-    root.insertAdjacentHTML('afterbegin', say('חמש אנמיות, חמש "אישיויות". לחצו על כל אחת וגלו מה מייחד אותה. כשסיימתם – נתראה במשחקים!', 'happy'));
+    root.insertAdjacentHTML('afterbegin', say('חמש אנמיות, חמש "אישיויות". בכל לשונית נסו קודם לחשוב לבד, ורק אז חשפו ובדקו אם צדקתם. כשסיימתם – נתראה במשחקים!', 'happy'));
     const host = el('<div></div>'); root.appendChild(host);
     function draw() {
       const C = ANEM_CARDS[cur], I = ANEMIA_CATS[cur];
-      const body = sec === 'mech' ? `<div class="row" style="flex-wrap:nowrap;align-items:flex-start">${ARTOF[cur] && ART[ARTOF[cur]] ? `<img src="${ART[ARTOF[cur]]}" alt="" style="width:96px;flex:0 0 96px">` : ''}<p style="margin:0">${C.mech}</p></div>` : sec === 'figs' ? (C.figs.length ? C.figs.map(f => fig(f[0], f[1])).join('') : '<p class="muted">לאנמיה אפלסטית אין איור ייעודי בספר – ראו את טבלת ההשוואה ביחידה הבאה.</p>') : `<ul style="padding-inline-start:20px;margin:0">${C[sec].map(x => `<li style="margin:7px 0">${x}</li>`).join('')}</ul>`;
+      const content = sec === 'mech' ? `<div class="row" style="flex-wrap:nowrap;align-items:flex-start">${ARTOF[cur] && ART[ARTOF[cur]] ? `<img src="${ART[ARTOF[cur]]}" alt="" style="width:96px;flex:0 0 96px">` : ''}<p style="margin:0">${C.mech}</p></div>` : sec === 'figs' ? (C.figs.length ? C.figs.map(f => fig(f[0], f[1])).join('') : '<p class="muted">לאנמיה אפלסטית אין איור ייעודי בספר – ראו את טבלת ההשוואה ביחידה הבאה.</p>') : `<ul style="padding-inline-start:20px;margin:0">${C[sec].map(x => `<li style="margin:7px 0">${x}</li>`).join('')}</ul>`;
+      const PRM = { mech: 'איך לדעתכם נוצרת האנמיה הזו, מה קורה בגוף?', causes: 'מה לדעתכם יכול לגרום לה?', clin: 'אילו תסמינים ותמונה קלינית לדעתכם מאפיינים אותה?', dx: 'אילו ממצאי דם הייתם מצפים לראות?', tx: 'איך הייתם מטפלים?', comp: 'אילו סיבוכים יכולים להופיע?' };
+      const body = (sec !== 'figs' && !rev.has(cur + '-' + sec)) ? `<div class="reveal"><div style="font-size:2rem">🤔</div><b>לפני שמציצים: נסו לחשוב לבד.</b><p style="margin:6px 0">${PRM[sec]}</p><button class="btn primary" data-rev="1">חשפו ובדקו אם צדקתם</button></div>` : content;
       host.innerHTML = `<div class="tabs">${keys.map(k => `<button data-k="${k}" class="${k === cur ? 'on' : ''}">${ANEMIA_CATS[k].ic} ${ANEMIA_CATS[k].short}${seen.has(k) ? '' : ''}</button>`).join('')}</div>
         <div class="card"><h2>${I.ic} ${I.n}</h2><div class="tabs">${SEC.map(s => `<button data-s="${s[0]}" class="${s[0] === sec ? 'on' : ''}">${s[1]}</button>`).join('')}</div>${body}</div>
         <div class="muted small center">נצפו ${seen.size}/5 כרטיסים</div>
@@ -1223,6 +1464,7 @@ registerGame({
     }
     host.addEventListener('click', e => {
       const k = e.target.closest('[data-k]'), s = e.target.closest('[data-s]');
+      if (e.target.closest('[data-rev]')) { rev.add(cur + '-' + sec); draw(); return; }
       if (k) { cur = k.dataset.k; seen.add(cur); sec = 'mech'; draw(); }
       else if (s) { sec = s.dataset.s; draw(); }
       else if (e.target.closest('#fin')) ctx.finish(100, '');
@@ -1231,21 +1473,28 @@ registerGame({
   },
 });
 
+/* נתוני טבלת ההשוואה – משותפים למשחק ההשוואה ולמשחק ההפוך */
+const CMP_ROWS = [
+      ['MCV', { ida: ['↓'], mega: ['↑'], hemo: ['↔', '↑'], acd: ['↔', '↓'], aplastic: ['↔'] }],
+  ['רטיקולוציטים', { ida: ['↓', '↔'], mega: ['↓'], hemo: ['↑'], acd: ['↓'], aplastic: ['↓'] }],
+  ['פריטין', { ida: ['↓'], mega: ['↔'], hemo: ['↑', '↔'], acd: ['↑', '↔'], aplastic: ['↔', '↑'] }],
+  ['טרנספרין', { ida: ['↑'], mega: ['↔'], hemo: ['↔', '↓'], acd: ['↓'], aplastic: ['↔'] }],
+  ['בילירובין ו-LDH', { ida: ['↔'], mega: ['↔', '↑'], hemo: ['↑'], acd: ['↔'], aplastic: ['↔'] }],
+  ['CRP / ESR', { ida: ['↔'], mega: ['↔'], hemo: ['↔', '↑'], acd: ['↑'], aplastic: ['↔'] }],
+  ['לבנים וטסיות', { ida: ['↔'], mega: ['↔', '↓'], hemo: ['↔'], acd: ['↔'], aplastic: ['↓'] }],
+];
+
 /* ---------- 10. טבלת השוואה – נחשו ואז חשפו ---------- */
 registerGame({
-  id: 'a_compare', part: 'A', sec: 'anemia', icon: '📊', title: 'טבלת ההשוואה: נחשו לפני שחושפים', desc: 'מלאו את דפוסי הבדיקות של כל אנמיה ובדקו את עצמכם',
+  id: 'a_compare', part: 'A', learned: [
+    'MCV ורטיקולוציטים מצמצמים את האפשרויות: MCV נמוך (ברזל), גבוה (ויטמינים), רטיקולוציטים גבוהים (המוליזה).',
+    'פריטין נמוך = חוסר ברזל. פריטין תקין או גבוה עם טרנספרין נמוך = מחלה כרונית.',
+    'בילירובין ו-LDH גבוהים מצביעים על המוליזה. ירידה בשלוש השורות מצביעה על אפלסטית.'
+  ], sec: 'anemia', icon: '📊', title: 'טבלת ההשוואה: נחשו לפני שחושפים', desc: 'מלאו את דפוסי הבדיקות של כל אנמיה ובדקו את עצמכם',
   teacherNote: 'לחיצה על תא מחליפה בין ?, ↓, ↔, ↑. בחלק מהתאים מתקבלות שתי תשובות (לפי הספר, למשל MCV באנמיה של מחלה כרונית ↔ או ↓). באנמיה מגלובלסטית LDH/בילירובין עלולים לעלות מעט (אריתרופויאזיס לא יעילה), ולכן שתי התשובות מתקבלות. המפתח מוצג למורה מתחת לכל תא.',
   mount(root, ctx) {
     const cols = ['ida', 'mega', 'hemo', 'acd', 'aplastic'];
-    const rows = [
-      ['MCV', { ida: ['↓'], mega: ['↑'], hemo: ['↔', '↑'], acd: ['↔', '↓'], aplastic: ['↔'] }],
-      ['רטיקולוציטים', { ida: ['↓', '↔'], mega: ['↓'], hemo: ['↑'], acd: ['↓'], aplastic: ['↓'] }],
-      ['פריטין', { ida: ['↓'], mega: ['↔'], hemo: ['↑', '↔'], acd: ['↑', '↔'], aplastic: ['↔', '↑'] }],
-      ['טרנספרין', { ida: ['↑'], mega: ['↔'], hemo: ['↔', '↓'], acd: ['↓'], aplastic: ['↔'] }],
-      ['בילירובין ו-LDH', { ida: ['↔'], mega: ['↔', '↑'], hemo: ['↑'], acd: ['↔'], aplastic: ['↔'] }],
-      ['CRP / ESR', { ida: ['↔'], mega: ['↔'], hemo: ['↔', '↑'], acd: ['↑'], aplastic: ['↔'] }],
-      ['לבנים וטסיות', { ida: ['↔'], mega: ['↔', '↓'], hemo: ['↔'], acd: ['↔'], aplastic: ['↓'] }],
-    ];
+    const rows = CMP_ROWS;
     const G = {}; let checked = false;
     const ord = ['?', '↓', '↔', '↑'];
     root.insertAdjacentHTML('afterbegin', say('בכל האנמיות ההמוגלובין <b>נמוך</b>. כל השאר – נחשו! לחיצה על תא מחליפה בין ↓ ↔ ↑. ואז "בדיקה".', 'wink'));
@@ -1257,7 +1506,7 @@ registerGame({
         return `<td class="${cls} ${IS_TEACHER ? 't-ok' : ''}" data-k="${k}" style="${IS_TEACHER ? 'position:relative' : ''}"><b>${txt}</b>${checked && !acc.includes(v) ? `<div class="small">${acc.join('/')}</div>` : ''}${IS_TEACHER ? `<div class="small" style="color:var(--violet)">${acc.join('/')}</div>` : ''}</td>`;
       }).join('')}</tr>`).join('')}</tbody></table>
         <div class="row" style="margin-top:12px"><button class="btn primary grow" id="chk" ${checked ? 'disabled' : ''}>בדיקה ✔</button><button class="btn" id="rst">איפוס</button></div>
-        ${checked ? '<div id="sum"></div>' : ''}${fig('dx_table', 'לוח אבחוני – השוואת סוגי האנמיות (איור מהספר)')}`;
+        ${checked ? '<div id="sum"></div>' : ''}${checked ? '<div class="explain" style="margin-top:10px"><b>הסבר:</b> MCV נמוך מצביע על חוסר ברזל, ו-MCV גבוה על חוסר B12 או פולית. רטיקולוציטים, בילירובין ו-LDH גבוהים מצביעים על המוליזה. פריטין תקין או גבוה עם טרנספרין נמוך וסמני דלקת גבוהים מצביעים על מחלה כרונית. ירידה בכל השורות מצביעה על אפלסטית.</div>' + fig('dx_table', 'לוח אבחוני – השוואת סוגי האנמיות (איור מהספר)') : ''}`;
     }
     host.addEventListener('click', e => {
       const td = e.target.closest('td.guess'); if (td && !checked) { const k = td.dataset.k; G[k] = ord[(ord.indexOf(G[k] || '?') + 1) % 4]; draw(); return; }
@@ -1273,9 +1522,53 @@ registerGame({
   },
 });
 
+/* ---------- 10ב. מהבדיקות לאנמיה (הפוך) ---------- */
+registerGame({
+  id: 'a_reverse', part: 'A', learned: [
+    'MCV מצמצם: נמוך מצביע על ברזל, גבוה על B12 או פולית.',
+    'רטיקולוציטים גבוהים עם בילירובין ו-LDH גבוהים מצביעים על המוליזה.',
+    'פריטין תקין או גבוה עם טרנספרין נמוך ו-CRP גבוה מצביעים על מחלה כרונית.',
+    'ירידה בכל השורות (אדומות, לבנות, טסיות) מצביעה על אפלסטית.'
+  ], sec: 'anemia', icon: '🔄', title: 'מהבדיקות לאנמיה', desc: 'מקבלים דפוס בדיקות (↑ ↓ ↔) ובוחרים איזו אנמיה זו',
+  teacherNote: 'המשחק ההפוך לטבלת ההשוואה: הדפוס מוצג, והתלמיד מזהה את האנמיה. הדפוסים נוצרים מאותה טבלה, ובכל סבב הדפוס מתאים לאנמיה אחת בלבד. בסבבים האחרונים חלק מהבדיקות מוסתרות.',
+  mount(root, ctx) {
+    const cols = ['ida', 'mega', 'hemo', 'acd', 'aplastic'];
+    const WHY = {
+      ida: 'MCV נמוך, פריטין נמוך וטרנספרין גבוה: מאגרי הברזל ריקים.',
+      mega: 'MCV גבוה ורטיקולוציטים נמוכים: ייצור לא יעיל בגלל חוסר B12 או פולית.',
+      hemo: 'רטיקולוציטים, בילירובין ו-LDH גבוהים: הרס מוגבר של כדוריות.',
+      acd: 'פריטין תקין או גבוה, טרנספרין נמוך וסמני דלקת גבוהים: הברזל "כלוא" בגלל דלקת.',
+      aplastic: 'רטיקולוציטים נמוכים וגם ירידה בלבנים ובטסיות: פנציטופניה.',
+    };
+    const fits = (a, shown) => shown.every(([ri, v]) => CMP_ROWS[ri][1][a].includes(v));
+    function makeRound(a, hide) {
+      for (let t = 0; t < 80; t++) {
+        const idx = shuffle(CMP_ROWS.map((_, i) => i)).slice(hide);
+        const shown = idx.sort((x, y) => x - y).map(ri => { const acc = CMP_ROWS[ri][1][a]; return [ri, Math.random() < .7 ? acc[0] : pick(acc)]; });
+        if (cols.every(b => b === a || !fits(b, shown))) return shown;
+      }
+      return null;
+    }
+    const order = shuffle(cols).concat(shuffle(cols).slice(0, 3));
+    const items = order.map((a, k) => {
+      const shown = (k >= 4 ? makeRound(a, 2) : null) || makeRound(a, 0) || CMP_ROWS.map((r, ri) => [ri, r[1][a][0]]);
+      const col = v => v === '↑' ? 'var(--bad)' : v === '↓' ? 'var(--blue)' : 'var(--muted)';
+      const vis = `<div class="kpi"><div><b style="color:var(--blue)">↓</b><span>המוגלובין</span></div>${shown.map(([ri, v]) => `<div><b style="color:${col(v)}">${v}</b><span>${CMP_ROWS[ri][0]}</span></div>`).join('')}</div>`;
+      return { q: 'איזו אנמיה מתאימה לדפוס הבדיקות הזה?', vis, tag: CAT_TAG[a], options: cols.map(b => ({ t: ANEMIA_CATS[b].n, ok: b === a, why: b === a ? WHY[a] : '', tag: CAT_TAG[b] })) };
+    });
+    root.insertAdjacentHTML('afterbegin', say('הפעם אני נותנת את הדפוס, ואתם מזהים את האנמיה. ↓ = נמוך, ↔ = תקין, ↑ = גבוה. בלי להציץ בטבלה!', 'wink'));
+    runQuiz(root, ctx, items);
+  },
+});
+
 /* ---------- 11. מי אני? ---------- */
 registerGame({
-  id: 'a_clues', part: 'A', sec: 'anemia', icon: '🕵️', title: 'מי אני? זיהוי אנמיה מרמזים', desc: 'רמזים קליניים, הומור קל ושאלה אחת: איזו אנמיה מדברת?',
+  id: 'a_clues', part: 'A', learned: [
+    'סימן ייחודי מכוון לאבחנה: פיקה לחוסר ברזל, נימול ואטקסיה ל-B12.',
+    'שתן כהה, צהבת וטחול מוגדל מצביעים על המוליזה.',
+    'חום, חבורות וזיהומים בלי טחול מוגדל מצביעים על אפלסטית.',
+    'מחלה כרונית עם פריטין גבוה ו-EPO נמוך מצביעה על אנמיה של מחלה כרונית.'
+  ], sec: 'anemia', icon: '🕵️', title: 'מי אני? זיהוי אנמיה מרמזים', desc: 'רמזים קליניים, הומור קל ושאלה אחת: איזו אנמיה מדברת?',
   teacherNote: 'שאלות קצרות על סימנים ייחודיים. כל שאלה כוללת הסבר ורמז לטיפול.',
   mount(root, ctx) {
     const O = k => ANEMIA_CATS[k].n;
@@ -1286,11 +1579,11 @@ registerGame({
       ['"שתן בצבע תה, עיניים צהובות וטחול מוגדל." מי אני?', 'hemo', 'צהבת, שתן כהה וטחול מוגדל – הסימנים הקלאסיים להמוליזה.'],
       ['"אני אנמיה קלה אצל חולה עם דלקת מפרקים שגרונית. הפריטין שלי גבוה אבל הברזל "נעול"." מי אני?', 'acd', 'פריטין תקין/גבוה, טרנספרין נמוך וסמני דלקת גבוהים – ברזל "כלוא" על ידי הפסידין.'],
       ['"חום, חבורות, פטכיות, זיהומים חוזרים – ובלי טחול מוגדל." מי אני?', 'aplastic', 'פנציטופניה: אנמיה + נויטרופניה + טסיות נמוכות. בחום – חירום רפואי.'],
-      ['"טבעונית אדוקה, לא לוקחת תוסף B12, ובשנים האחרונות לא בדקה דם." מי אני?', 'mega', 'B12 נמצא כמעט רק במוצרי חי. המאגר בכבד נגמר אחרי שנים, ואז מופיעה האנמיה.'],
+      ['"טבעונית קפדנית, לא נוטלת שום תוספי תזונה, ובשנים האחרונות לא בדקה דם." מי אני?', 'mega', 'B12 נמצא כמעט רק במוצרי חי. המאגר בכבד נגמר אחרי שנים, ואז מופיעה האנמיה.'],
       ['"אכלתי פול אצל סבתא, ויומיים אחר כך השתן כהה מאוד." מי אני?', 'hemo', 'חוסר באנזים G6PD – הפול הוא טריגר קלאסי להמוליזה חריפה.'],
       ['"וסת כבדה כבר שנים, MCV נמוך ופריטין נמוך." מי אני?', 'ida', 'איבוד דם כרוני מרוקן את מאגרי הברזל.'],
       ['"חולה בכליות כרוני, EPO נמוך, אנמיה נורמוציטית קלה-בינונית." מי אני?', 'acd', 'מחלת כליות כרונית – ירידה בייצור EPO + דלקת. הטיפול: ממריצי אריתרופויאזיס, ולפי הצורך ברזל.'],
-      ['"לוקח מטפורמין ותרופות להפחתת חומצה כבר שנים, MCV גבוה." מי אני?', 'mega', 'תרופות אלה עלולות לפגוע בספיגת B12 (פקטור פנימי).'],
+      ['"לוקח כבר שנים תרופות להפחתת חומציות בקיבה, MCV גבוה." מי אני?', 'mega', 'תרופות להפחתת חומציות הקיבה (וגם מטפורמין) עלולות לפגוע בספיגת B12.'],
     ];
     root.insertAdjacentHTML('afterbegin', say('נבדוק אם אתם בלשים טובים. קראו את הרמז – ובחרו את האנמיה! 🕵️', 'wink'));
     const items = shuffle(Q).slice(0, 8).map(q => ({ q: q[0], tag: CAT_TAG[q[1]], options: all.map(k => ({ t: O(k), ok: k === q[1], why: k === q[1] ? q[2] : '', tag: CAT_TAG[k] })), shuffle: true }));
@@ -1391,11 +1684,23 @@ function labTypes(n = 8) {
   const base = ['ida', 'b12', 'folate', 'aiha', 'g6pd', 'acd', 'aplastic'];
   return shuffle(base.concat(shuffle(base).slice(0, n - base.length)));
 }
-registerGame({ id: 'b_l1', part: 'B', icon: '🧪', title: 'רמה 1 – הבדיקות מול העיניים', desc: 'כל הבדיקות, ממצאים קלאסיים, ומשטח דם. 8 מטופלים.', teacherNote: 'שלב 1: סיווג לפי MCV. שלב 2: האנמיה. שלב 3: סיבה (איזה ויטמין / איזו המוליזה). הערכים מייצגים את הדפוס הטיפוסי.',
+registerGame({ id: 'b_l1', part: 'B', learned: [
+    'MCV מצמצם את האפשרויות: נמוך מצביע על חוסר ברזל, גבוה על חוסר B12 או פולית.',
+    'רטיקולוציטים גבוהים מצביעים על המוליזה. נמוכים מצביעים על ייצור לקוי.',
+    'פריטין נמוך הוא סימן מובהק לחוסר ברזל. בילירובין ו-LDH גבוהים מצביעים על המוליזה.'
+  ], icon: '🧪', title: 'רמה 1 – הבדיקות מול העיניים', desc: 'כל הבדיקות, ממצאים קלאסיים, ומשטח דם. 8 מטופלים.', teacherNote: 'שלב 1: סיווג לפי MCV. שלב 2: האנמיה. שלב 3: סיבה (איזה ויטמין / איזו המוליזה). הערכים מייצגים את הדפוס הטיפוסי.',
   mount(root, ctx) { root.insertAdjacentHTML('afterbegin', say('קיבלתי תוצאות בדיקות דם… ועכשיו אתם הרופאים. התחילו מה-MCV – הוא מצמצם את האפשרויות!', 'think')); runLabRounds(root, ctx, 1, labTypes(8)); } });
-registerGame({ id: 'b_l2', part: 'B', icon: '⚖️', title: 'רמה 2 – ערכים בגבולות', desc: 'דפוסים חופפים: אנמיות קלות, MCV גבולי. בלי משטח דם. 8 מטופלים.', teacherNote: 'ערכי קצה: חוסר ברזל קל, אנמיה של מחלה כרונית עם MCV נמוך, חוסר B12 קל, המוליזה קלה, אפלסטית עם פנציטופניה קלה יחסית. דורש קריאת דפוס שלם.',
+registerGame({ id: 'b_l2', part: 'B', learned: [
+    'ערכים בגבול דורשים קריאת דפוס שלם ולא מדד בודד.',
+    'באנמיה של מחלה כרונית יכול להיות MCV נמוך, אך הפריטין תקין או גבוה והטרנספרין נמוך.',
+    'חוסר ברזל קל: פריטין נמוך גם כשה-Hb כמעט תקין.'
+  ], icon: '⚖️', title: 'רמה 2 – ערכים בגבולות', desc: 'דפוסים חופפים: אנמיות קלות, MCV גבולי. בלי משטח דם. 8 מטופלים.', teacherNote: 'ערכי קצה: חוסר ברזל קל, אנמיה של מחלה כרונית עם MCV נמוך, חוסר B12 קל, המוליזה קלה, אפלסטית עם פנציטופניה קלה יחסית. דורש קריאת דפוס שלם.',
   mount(root, ctx) { root.insertAdjacentHTML('afterbegin', say('עכשיו זה לא כל כך ברור… הערכים בגבול. קראו את כל הדפוס ואל תסתמכו על מדד אחד.', 'wink')); runLabRounds(root, ctx, 2, labTypes(8)); } });
-registerGame({ id: 'b_l3', part: 'B', icon: '🧭', title: 'רמה 3 – מה הבדיקה הבאה?', desc: 'מקבלים רק CBC ורטיקולוציטים: בחרו את הבדיקה הבאה ואז אבחנו. 7 מטופלים.', teacherNote: 'מכוון לחשיבה דיאגנוסטית: דפוס MCV + רטיקולוציטים מכוון לבדיקה הבאה (ברזל / ויטמינים / המוליזה / מח עצם). באנמיה של מחלה כרונית מתקבלת גם בדיקת CRP/ESR.',
+registerGame({ id: 'b_l3', part: 'B', learned: [
+    'רופא טוב מזמין בדיקות בצורה ממוקדת, לפי דפוס ה-MCV והרטיקולוציטים.',
+    'MCV נמוך מוביל לפרופיל ברזל. MCV גבוה מוביל ל-B12 ופולית. רטיקולוציטים גבוהים מובילים לסמני המוליזה.',
+    'רטיקולוציטים נמוכים עם פנציטופניה מובילים לביופסיית מח עצם.'
+  ], icon: '🧭', title: 'רמה 3 – מה הבדיקה הבאה?', desc: 'מקבלים רק CBC ורטיקולוציטים: בחרו את הבדיקה הבאה ואז אבחנו. 7 מטופלים.', teacherNote: 'מכוון לחשיבה דיאגנוסטית: דפוס MCV + רטיקולוציטים מכוון לבדיקה הבאה (ברזל / ויטמינים / המוליזה / מח עצם). באנמיה של מחלה כרונית מתקבלת גם בדיקת CRP/ESR.',
   mount(root, ctx) { root.insertAdjacentHTML('afterbegin', say('רופא טוב לא מזמין הכול – הוא מזמין חכם. התחילו עם CBC ורטיקולוציטים ובחרו את הצעד הבא.', 'happy')); runLabRounds(root, ctx, 3, labTypes(7).slice(0, 7)); } });
 
 /* ---- partC.js ---- */
@@ -1570,6 +1875,7 @@ const SHIFTS = {
 };
 Object.values(SHIFTS).forEach(S => registerGame({
   id: S.id, part: 'C', icon: S.icon, title: S.title, desc: S.desc,
+  learned: ['תמונה מלאה מורכבת מאנמנזה, בדיקה גופנית ובדיקות דם יחד, ולא ממדד אחד.', 'הסיבה לאנמיה חשובה כמו האבחנה: הטיפול מכוון לגורם (דימום, ספיגה, תרופות, דלקת).', 'חום עם נויטרופניה או פנציטופניה הוא חירום רפואי.', 'בטיפול בחוסר ברזל ממשיכים חודשים אחרי נורמליזציה של ההמוגלובין, כדי למלא את מאגרי הפריטין.'],
   teacherNote: 'כל מטופל כולל אנמנזה, בדיקה גופנית, תוצאות בדיקות דם, אבחנה, סיבה וטיפול. ציון מטופל: אבחנה 50, סיבה 20, טיפול 30.',
   mount(root, ctx) { runShift(root, ctx, S.ids); },
 }));
@@ -1665,7 +1971,7 @@ function teacherPage(root) {
       <div class="explain" style="margin-top:12px">ℹ️ קישור המורה מוגן רק במילת סוד בכתובת (<span class="ltr">?t=${CFG.TEACHER_KEY}</span>). זו הגנה פשוטה למניעת כניסה בטעות – לא הגנה אמיתית: תלמיד סקרן שיקרא את קוד הדף יוכל למצוא את המילה. אפשר להחליף את המילה במשתנה <span class="ltr">TEACHER_KEY</span> בתחילת הקוד.</div></div>
     <div class="card"><h2>✂️ קישורים נפרדים לכל חלק</h2>
       <p class="small muted">כל קישור פותח לתלמידים רק את מה שנבחר, בלי שיראו את שאר החלקים. אפשר גם לחבר כמה חלקים: <span class="ltr">?only=a,c</span></p>
-      ${[['a', '📘 חלק א׳ – ללמוד ולשחק'], ['b', '🧪 חלק ב׳ – אבחון מבדיקות דם'], ['c', '🚑 חלק ג׳ – תורנות מיון']].map(([k, t]) => { const l = base + '?only=' + k; return `<p class="small" style="margin:12px 0 4px"><b>${t}</b></p><div class="row"><input type="text" readonly value="${esc(l)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(l)}">העתקה</button></div>`; }).join('')}
+      ${[['a', '📘 חלק א׳ – חזרה אינטראקטיבית על עקרונות חשובים'], ['b', '🧪 חלק ב׳ – אבחון מבדיקות דם'], ['c', '🚑 חלק ג׳ – תורנות מיון']].map(([k, t]) => { const l = base + '?only=' + k; return `<p class="small" style="margin:12px 0 4px"><b>${t}</b></p><div class="row"><input type="text" readonly value="${esc(l)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(l)}">העתקה</button></div>`; }).join('')}
       <details style="margin-top:14px"><summary><b>קישור למשחק בודד</b></summary>${GAMES.map(g => { const l = base + '?only=' + g.id; return `<p class="small" style="margin:10px 0 4px">${g.icon} ${g.title}</p><div class="row"><input type="text" readonly value="${esc(l)}" style="direction:ltr;flex:1"><button class="btn sm" data-cp="${esc(l)}">העתקה</button></div>`; }).join('')}</details></div>
     <div class="card"><h2>📥 איסוף תוצאות תלמידים</h2>
       <p class="small muted">כל תלמיד לוחץ על "שליחת תוצאות" ומעביר לכם קוד שמתחיל ב-HL1. הדביקו כאן קוד אחד או כמה (מופרדים בשורות).</p>
@@ -1701,7 +2007,7 @@ function teacherPage(root) {
 'use strict';
 /* ===== ניווט ומסכים ראשיים ===== */
 const PARTS = {
-  A: { l: 'א׳', t: 'ללמוד ולשחק', d: 'תא הדם האדום, ייצור, ברזל וויטמינים, סוגי דם, וחמש האנמיות', col: 'var(--primary)', ic: '📘' },
+  A: { l: 'א׳', t: 'חזרה אינטראקטיבית על עקרונות חשובים', d: 'חזרה מהירה וחביבה על האנטומיה והפיזיולוגיה של תא הדם האדום, ועל חמש האנמיות', col: 'var(--primary)', ic: '📘' },
   B: { l: 'ב׳', t: 'אבחון מבדיקות דם', d: 'מקבלים בדיקות דם ומחליטים איזו אנמיה זו', col: 'var(--teal)', ic: '🧪' },
   C: { l: 'ג׳', t: 'תורנות מיון', d: 'מטופלים אמיתיים: שיחה, בדיקות, אבחנה וטיפול', col: 'var(--violet)', ic: '🚑' },
 };
@@ -1717,7 +2023,7 @@ function shell() {
   document.body.innerHTML = `<header class="topbar"><div class="brand" id="logo"><span style="width:34px;height:34px;display:inline-block">${ART.mascot_happy ? `<img src="${ART.mascot_happy}" alt="" style="width:100%;height:100%">` : mascotSVG('happy')}</span><span>${CFG.TITLE}</span></div><div class="sp"></div>${IS_TEACHER ? '<span class="chip t">🎓 מצב מורה</span>' : ''}<span class="chip" id="stars">⭐ 0</span></header>
   <main class="page" id="view"></main>
   <footer class="credit">פותח על ידי אורי העליון</footer>
-  <nav class="nav" aria-label="ניווט ראשי">${[['home', '🏠', 'בית'], ['a', '📘', 'א׳ ללמוד'], ['b', '🧪', 'ב׳ אבחון'], ['c', '🚑', 'ג׳ מיון'], ['me', '👤', 'אני']].filter(n => !LOCK || n[0] === 'me' || (n[0] !== 'home' && allowedParts().includes(n[0]))).concat(IS_TEACHER ? [['t', '🎓', 'מורה']] : []).map(n => `<a href="#/${n[0]}" data-n="${n[0]}"><span class="ic">${n[1]}</span><span>${n[2]}</span></a>`).join('')}</nav>`;
+  <nav class="nav" aria-label="ניווט ראשי">${[['home', '🏠', 'בית'], ['a', '📘', 'א׳ חזרה'], ['b', '🧪', 'ב׳ אבחון'], ['c', '🚑', 'ג׳ מיון'], ['me', '👤', 'אני']].filter(n => !LOCK || n[0] === 'me' || (n[0] !== 'home' && allowedParts().includes(n[0]))).concat(IS_TEACHER ? [['t', '🎓', 'מורה']] : []).map(n => `<a href="#/${n[0]}" data-n="${n[0]}"><span class="ic">${n[1]}</span><span>${n[2]}</span></a>`).join('')}</nav>`;
   $('#logo').onclick = () => location.hash = LOCK ? '#/' + allowedParts()[0] : '#/home';
 }
 function updateTop(route) {
@@ -1757,7 +2063,7 @@ function partPage(p) {
   const P = PARTS[p], gs = gamesOfPart(p);
   let h = `<div class="hero" style="${ART.hero_bg ? heroBg(p === 'A' ? 'rgba(160,30,55,.65),rgba(110,30,60,.5)' : p === 'B' ? 'rgba(15,110,115,.65),rgba(26,90,150,.5)' : 'rgba(110,70,200,.65),rgba(60,40,140,.5)') : 'background:linear-gradient(135deg,' + (p === 'A' ? '#d23b4c,#8e1b2e' : p === 'B' ? '#0f9b95,#1a6fa0' : '#7a4fd6,#4b2f9c') + ')'}">${mascot(p === 'C' ? 'think' : 'happy')}<div><h1>חלק ${P.l}: ${P.t}</h1><p>${P.d}</p></div></div>`;
   if (p === 'A') {
-    h += `<div class="card soft small">📘 חלק א׳ מסכם את מה שנלמד בכיתה, בעזרת משחקים. אפשר לעבוד לפי הסדר או לדלג בין יחידות.</div>`;
+    h += `<div class="card soft small">📘 כאן חוזרים בקצרה, בעזרת כלים קטנים ומשחקיים, על עקרונות חשובים באנטומיה ובפיזיולוגיה של תא הדם האדום. זה לא תחליף ללימוד, אלא חזרה מהירה וחביבה. אפשר לעבוד לפי הסדר או לדלג בין יחידות.</div>`;
     Object.keys(SECS).forEach(s => { const g = gs.filter(x => x.sec === s); h += `<div class="part"><h2 style="margin:0">${SECS[s][0]}</h2></div><p class="muted small" style="margin-top:0">${SECS[s][1]}</p><div class="grid">${g.map(tile).join('')}</div>`; });
   } else if (p === 'B') {
     h += `<div class="card soft"><b>איך זה עובד?</b> מקבלים תוצאות בדיקות דם ובוחרים: איזו אנמיה זו? כל רמה קשה יותר מקודמתה.</div><div class="grid">${gs.map(tile).join('')}</div>

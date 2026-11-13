@@ -3,7 +3,11 @@
 
 /* ---------- 8. תסמינים ← מנגנון ---------- */
 registerGame({
-  id: 'a_symp', part: 'A', sec: 'anemia', icon: '🥱', title: 'מדוע האנמיה מרגישה ככה?', desc: 'התאימו כל תסמין למנגנון הפיזיולוגי שמאחוריו',
+  id: 'a_symp', part: 'A', learned: [
+    'כל תסמיני האנמיה נובעים מחוסר חמצן ברקמות ומניסיונות הגוף לפצות.',
+    'הלב והריאות מתאמצים (דופק מהיר, קוצר נשימה), והדם מוסט מהעור והגפיים לאיברים חיוניים (חיוורון, קור).',
+    'התסמינים אינם ייחודיים לסוג מסוים, ולכן אבחון דורש בדיקות דם.'
+  ], sec: 'anemia', icon: '🥱', title: 'מדוע האנמיה מרגישה ככה?', desc: 'התאימו כל תסמין למנגנון הפיזיולוגי שמאחוריו',
   teacherNote: 'כל התסמינים נובעים ממחסור בחמצן ברקמות ומניסיונות הגוף לפצות. 6 זוגות להתאמה.',
   mount(root, ctx) {
     root.insertAdjacentHTML('afterbegin', say('אנמיה היא לא מחלה – היא תסמין. ומה שאתם מרגישים נובע מפיזיולוגיה ברורה. בואו נחבר!', 'think') + fig('symptoms', 'תסמיני אנמיה (איור מהספר)'));
@@ -72,17 +76,23 @@ const ANEM_CARDS = {
 };
 const ARTOF = { ida: 'iron', mega: 'b12', hemo: 'spleen', acd: 'kidney', aplastic: 'wbc' };
 registerGame({
-  id: 'a_cards', part: 'A', sec: 'anemia', icon: '🗂️', title: 'כרטיסי האנמיות', desc: 'סיכום אינטראקטיבי של חמש האנמיות – מנגנון, גורמים, קליניקה, אבחון וטיפול',
+  id: 'a_cards', part: 'A', learned: [
+    'חוסר ברזל: מיקרוציטית, פריטין נמוך. מגלובלסטית: מאקרוציטית, חוסר B12 או פולית.',
+    'המוליטית: צהבת, רטיקולוציטים גבוהים. מחלה כרונית: פריטין תקין או גבוה. אפלסטית: פנציטופניה.',
+    'הטיפול תמיד מתחיל בגורם.'
+  ], sec: 'anemia', icon: '🗂️', title: 'כרטיסי האנמיות', desc: 'סיכום אינטראקטיבי של חמש האנמיות – מנגנון, גורמים, קליניקה, אבחון וטיפול',
   teacherNote: 'סיכום הלימוד לפי ספר המגמה. היחידה מסתיימת כשנפתחו כל חמשת הכרטיסים.',
   mount(root, ctx) {
-    const keys = ['ida', 'mega', 'hemo', 'acd', 'aplastic'], seen = new Set(['ida']);
+    const keys = ['ida', 'mega', 'hemo', 'acd', 'aplastic'], seen = new Set(['ida']), rev = new Set();
     let cur = 'ida', sec = 'mech';
     const SEC = [['mech', '⚙️ מנגנון'], ['causes', '🧩 גורמים'], ['clin', '🩺 קליניקה'], ['dx', '🧪 אבחון'], ['tx', '💊 טיפול'], ['comp', '⚠️ סיבוכים'], ['figs', '🖼️ איורים']];
-    root.insertAdjacentHTML('afterbegin', say('חמש אנמיות, חמש "אישיויות". לחצו על כל אחת וגלו מה מייחד אותה. כשסיימתם – נתראה במשחקים!', 'happy'));
+    root.insertAdjacentHTML('afterbegin', say('חמש אנמיות, חמש "אישיויות". בכל לשונית נסו קודם לחשוב לבד, ורק אז חשפו ובדקו אם צדקתם. כשסיימתם – נתראה במשחקים!', 'happy'));
     const host = el('<div></div>'); root.appendChild(host);
     function draw() {
       const C = ANEM_CARDS[cur], I = ANEMIA_CATS[cur];
-      const body = sec === 'mech' ? `<div class="row" style="flex-wrap:nowrap;align-items:flex-start">${ARTOF[cur] && ART[ARTOF[cur]] ? `<img src="${ART[ARTOF[cur]]}" alt="" style="width:96px;flex:0 0 96px">` : ''}<p style="margin:0">${C.mech}</p></div>` : sec === 'figs' ? (C.figs.length ? C.figs.map(f => fig(f[0], f[1])).join('') : '<p class="muted">לאנמיה אפלסטית אין איור ייעודי בספר – ראו את טבלת ההשוואה ביחידה הבאה.</p>') : `<ul style="padding-inline-start:20px;margin:0">${C[sec].map(x => `<li style="margin:7px 0">${x}</li>`).join('')}</ul>`;
+      const content = sec === 'mech' ? `<div class="row" style="flex-wrap:nowrap;align-items:flex-start">${ARTOF[cur] && ART[ARTOF[cur]] ? `<img src="${ART[ARTOF[cur]]}" alt="" style="width:96px;flex:0 0 96px">` : ''}<p style="margin:0">${C.mech}</p></div>` : sec === 'figs' ? (C.figs.length ? C.figs.map(f => fig(f[0], f[1])).join('') : '<p class="muted">לאנמיה אפלסטית אין איור ייעודי בספר – ראו את טבלת ההשוואה ביחידה הבאה.</p>') : `<ul style="padding-inline-start:20px;margin:0">${C[sec].map(x => `<li style="margin:7px 0">${x}</li>`).join('')}</ul>`;
+      const PRM = { mech: 'איך לדעתכם נוצרת האנמיה הזו, מה קורה בגוף?', causes: 'מה לדעתכם יכול לגרום לה?', clin: 'אילו תסמינים ותמונה קלינית לדעתכם מאפיינים אותה?', dx: 'אילו ממצאי דם הייתם מצפים לראות?', tx: 'איך הייתם מטפלים?', comp: 'אילו סיבוכים יכולים להופיע?' };
+      const body = (sec !== 'figs' && !rev.has(cur + '-' + sec)) ? `<div class="reveal"><div style="font-size:2rem">🤔</div><b>לפני שמציצים: נסו לחשוב לבד.</b><p style="margin:6px 0">${PRM[sec]}</p><button class="btn primary" data-rev="1">חשפו ובדקו אם צדקתם</button></div>` : content;
       host.innerHTML = `<div class="tabs">${keys.map(k => `<button data-k="${k}" class="${k === cur ? 'on' : ''}">${ANEMIA_CATS[k].ic} ${ANEMIA_CATS[k].short}${seen.has(k) ? '' : ''}</button>`).join('')}</div>
         <div class="card"><h2>${I.ic} ${I.n}</h2><div class="tabs">${SEC.map(s => `<button data-s="${s[0]}" class="${s[0] === sec ? 'on' : ''}">${s[1]}</button>`).join('')}</div>${body}</div>
         <div class="muted small center">נצפו ${seen.size}/5 כרטיסים</div>
@@ -90,6 +100,7 @@ registerGame({
     }
     host.addEventListener('click', e => {
       const k = e.target.closest('[data-k]'), s = e.target.closest('[data-s]');
+      if (e.target.closest('[data-rev]')) { rev.add(cur + '-' + sec); draw(); return; }
       if (k) { cur = k.dataset.k; seen.add(cur); sec = 'mech'; draw(); }
       else if (s) { sec = s.dataset.s; draw(); }
       else if (e.target.closest('#fin')) ctx.finish(100, '');
@@ -98,21 +109,28 @@ registerGame({
   },
 });
 
+/* נתוני טבלת ההשוואה – משותפים למשחק ההשוואה ולמשחק ההפוך */
+const CMP_ROWS = [
+      ['MCV', { ida: ['↓'], mega: ['↑'], hemo: ['↔', '↑'], acd: ['↔', '↓'], aplastic: ['↔'] }],
+  ['רטיקולוציטים', { ida: ['↓', '↔'], mega: ['↓'], hemo: ['↑'], acd: ['↓'], aplastic: ['↓'] }],
+  ['פריטין', { ida: ['↓'], mega: ['↔'], hemo: ['↑', '↔'], acd: ['↑', '↔'], aplastic: ['↔', '↑'] }],
+  ['טרנספרין', { ida: ['↑'], mega: ['↔'], hemo: ['↔', '↓'], acd: ['↓'], aplastic: ['↔'] }],
+  ['בילירובין ו-LDH', { ida: ['↔'], mega: ['↔', '↑'], hemo: ['↑'], acd: ['↔'], aplastic: ['↔'] }],
+  ['CRP / ESR', { ida: ['↔'], mega: ['↔'], hemo: ['↔', '↑'], acd: ['↑'], aplastic: ['↔'] }],
+  ['לבנים וטסיות', { ida: ['↔'], mega: ['↔', '↓'], hemo: ['↔'], acd: ['↔'], aplastic: ['↓'] }],
+];
+
 /* ---------- 10. טבלת השוואה – נחשו ואז חשפו ---------- */
 registerGame({
-  id: 'a_compare', part: 'A', sec: 'anemia', icon: '📊', title: 'טבלת ההשוואה: נחשו לפני שחושפים', desc: 'מלאו את דפוסי הבדיקות של כל אנמיה ובדקו את עצמכם',
+  id: 'a_compare', part: 'A', learned: [
+    'MCV ורטיקולוציטים מצמצמים את האפשרויות: MCV נמוך (ברזל), גבוה (ויטמינים), רטיקולוציטים גבוהים (המוליזה).',
+    'פריטין נמוך = חוסר ברזל. פריטין תקין או גבוה עם טרנספרין נמוך = מחלה כרונית.',
+    'בילירובין ו-LDH גבוהים מצביעים על המוליזה. ירידה בשלוש השורות מצביעה על אפלסטית.'
+  ], sec: 'anemia', icon: '📊', title: 'טבלת ההשוואה: נחשו לפני שחושפים', desc: 'מלאו את דפוסי הבדיקות של כל אנמיה ובדקו את עצמכם',
   teacherNote: 'לחיצה על תא מחליפה בין ?, ↓, ↔, ↑. בחלק מהתאים מתקבלות שתי תשובות (לפי הספר, למשל MCV באנמיה של מחלה כרונית ↔ או ↓). באנמיה מגלובלסטית LDH/בילירובין עלולים לעלות מעט (אריתרופויאזיס לא יעילה), ולכן שתי התשובות מתקבלות. המפתח מוצג למורה מתחת לכל תא.',
   mount(root, ctx) {
     const cols = ['ida', 'mega', 'hemo', 'acd', 'aplastic'];
-    const rows = [
-      ['MCV', { ida: ['↓'], mega: ['↑'], hemo: ['↔', '↑'], acd: ['↔', '↓'], aplastic: ['↔'] }],
-      ['רטיקולוציטים', { ida: ['↓', '↔'], mega: ['↓'], hemo: ['↑'], acd: ['↓'], aplastic: ['↓'] }],
-      ['פריטין', { ida: ['↓'], mega: ['↔'], hemo: ['↑', '↔'], acd: ['↑', '↔'], aplastic: ['↔', '↑'] }],
-      ['טרנספרין', { ida: ['↑'], mega: ['↔'], hemo: ['↔', '↓'], acd: ['↓'], aplastic: ['↔'] }],
-      ['בילירובין ו-LDH', { ida: ['↔'], mega: ['↔', '↑'], hemo: ['↑'], acd: ['↔'], aplastic: ['↔'] }],
-      ['CRP / ESR', { ida: ['↔'], mega: ['↔'], hemo: ['↔', '↑'], acd: ['↑'], aplastic: ['↔'] }],
-      ['לבנים וטסיות', { ida: ['↔'], mega: ['↔', '↓'], hemo: ['↔'], acd: ['↔'], aplastic: ['↓'] }],
-    ];
+    const rows = CMP_ROWS;
     const G = {}; let checked = false;
     const ord = ['?', '↓', '↔', '↑'];
     root.insertAdjacentHTML('afterbegin', say('בכל האנמיות ההמוגלובין <b>נמוך</b>. כל השאר – נחשו! לחיצה על תא מחליפה בין ↓ ↔ ↑. ואז "בדיקה".', 'wink'));
@@ -124,7 +142,7 @@ registerGame({
         return `<td class="${cls} ${IS_TEACHER ? 't-ok' : ''}" data-k="${k}" style="${IS_TEACHER ? 'position:relative' : ''}"><b>${txt}</b>${checked && !acc.includes(v) ? `<div class="small">${acc.join('/')}</div>` : ''}${IS_TEACHER ? `<div class="small" style="color:var(--violet)">${acc.join('/')}</div>` : ''}</td>`;
       }).join('')}</tr>`).join('')}</tbody></table>
         <div class="row" style="margin-top:12px"><button class="btn primary grow" id="chk" ${checked ? 'disabled' : ''}>בדיקה ✔</button><button class="btn" id="rst">איפוס</button></div>
-        ${checked ? '<div id="sum"></div>' : ''}${fig('dx_table', 'לוח אבחוני – השוואת סוגי האנמיות (איור מהספר)')}`;
+        ${checked ? '<div id="sum"></div>' : ''}${checked ? '<div class="explain" style="margin-top:10px"><b>הסבר:</b> MCV נמוך מצביע על חוסר ברזל, ו-MCV גבוה על חוסר B12 או פולית. רטיקולוציטים, בילירובין ו-LDH גבוהים מצביעים על המוליזה. פריטין תקין או גבוה עם טרנספרין נמוך וסמני דלקת גבוהים מצביעים על מחלה כרונית. ירידה בכל השורות מצביעה על אפלסטית.</div>' + fig('dx_table', 'לוח אבחוני – השוואת סוגי האנמיות (איור מהספר)') : ''}`;
     }
     host.addEventListener('click', e => {
       const td = e.target.closest('td.guess'); if (td && !checked) { const k = td.dataset.k; G[k] = ord[(ord.indexOf(G[k] || '?') + 1) % 4]; draw(); return; }
@@ -140,9 +158,53 @@ registerGame({
   },
 });
 
+/* ---------- 10ב. מהבדיקות לאנמיה (הפוך) ---------- */
+registerGame({
+  id: 'a_reverse', part: 'A', learned: [
+    'MCV מצמצם: נמוך מצביע על ברזל, גבוה על B12 או פולית.',
+    'רטיקולוציטים גבוהים עם בילירובין ו-LDH גבוהים מצביעים על המוליזה.',
+    'פריטין תקין או גבוה עם טרנספרין נמוך ו-CRP גבוה מצביעים על מחלה כרונית.',
+    'ירידה בכל השורות (אדומות, לבנות, טסיות) מצביעה על אפלסטית.'
+  ], sec: 'anemia', icon: '🔄', title: 'מהבדיקות לאנמיה', desc: 'מקבלים דפוס בדיקות (↑ ↓ ↔) ובוחרים איזו אנמיה זו',
+  teacherNote: 'המשחק ההפוך לטבלת ההשוואה: הדפוס מוצג, והתלמיד מזהה את האנמיה. הדפוסים נוצרים מאותה טבלה, ובכל סבב הדפוס מתאים לאנמיה אחת בלבד. בסבבים האחרונים חלק מהבדיקות מוסתרות.',
+  mount(root, ctx) {
+    const cols = ['ida', 'mega', 'hemo', 'acd', 'aplastic'];
+    const WHY = {
+      ida: 'MCV נמוך, פריטין נמוך וטרנספרין גבוה: מאגרי הברזל ריקים.',
+      mega: 'MCV גבוה ורטיקולוציטים נמוכים: ייצור לא יעיל בגלל חוסר B12 או פולית.',
+      hemo: 'רטיקולוציטים, בילירובין ו-LDH גבוהים: הרס מוגבר של כדוריות.',
+      acd: 'פריטין תקין או גבוה, טרנספרין נמוך וסמני דלקת גבוהים: הברזל "כלוא" בגלל דלקת.',
+      aplastic: 'רטיקולוציטים נמוכים וגם ירידה בלבנים ובטסיות: פנציטופניה.',
+    };
+    const fits = (a, shown) => shown.every(([ri, v]) => CMP_ROWS[ri][1][a].includes(v));
+    function makeRound(a, hide) {
+      for (let t = 0; t < 80; t++) {
+        const idx = shuffle(CMP_ROWS.map((_, i) => i)).slice(hide);
+        const shown = idx.sort((x, y) => x - y).map(ri => { const acc = CMP_ROWS[ri][1][a]; return [ri, Math.random() < .7 ? acc[0] : pick(acc)]; });
+        if (cols.every(b => b === a || !fits(b, shown))) return shown;
+      }
+      return null;
+    }
+    const order = shuffle(cols).concat(shuffle(cols).slice(0, 3));
+    const items = order.map((a, k) => {
+      const shown = (k >= 4 ? makeRound(a, 2) : null) || makeRound(a, 0) || CMP_ROWS.map((r, ri) => [ri, r[1][a][0]]);
+      const col = v => v === '↑' ? 'var(--bad)' : v === '↓' ? 'var(--blue)' : 'var(--muted)';
+      const vis = `<div class="kpi"><div><b style="color:var(--blue)">↓</b><span>המוגלובין</span></div>${shown.map(([ri, v]) => `<div><b style="color:${col(v)}">${v}</b><span>${CMP_ROWS[ri][0]}</span></div>`).join('')}</div>`;
+      return { q: 'איזו אנמיה מתאימה לדפוס הבדיקות הזה?', vis, tag: CAT_TAG[a], options: cols.map(b => ({ t: ANEMIA_CATS[b].n, ok: b === a, why: b === a ? WHY[a] : '', tag: CAT_TAG[b] })) };
+    });
+    root.insertAdjacentHTML('afterbegin', say('הפעם אני נותנת את הדפוס, ואתם מזהים את האנמיה. ↓ = נמוך, ↔ = תקין, ↑ = גבוה. בלי להציץ בטבלה!', 'wink'));
+    runQuiz(root, ctx, items);
+  },
+});
+
 /* ---------- 11. מי אני? ---------- */
 registerGame({
-  id: 'a_clues', part: 'A', sec: 'anemia', icon: '🕵️', title: 'מי אני? זיהוי אנמיה מרמזים', desc: 'רמזים קליניים, הומור קל ושאלה אחת: איזו אנמיה מדברת?',
+  id: 'a_clues', part: 'A', learned: [
+    'סימן ייחודי מכוון לאבחנה: פיקה לחוסר ברזל, נימול ואטקסיה ל-B12.',
+    'שתן כהה, צהבת וטחול מוגדל מצביעים על המוליזה.',
+    'חום, חבורות וזיהומים בלי טחול מוגדל מצביעים על אפלסטית.',
+    'מחלה כרונית עם פריטין גבוה ו-EPO נמוך מצביעה על אנמיה של מחלה כרונית.'
+  ], sec: 'anemia', icon: '🕵️', title: 'מי אני? זיהוי אנמיה מרמזים', desc: 'רמזים קליניים, הומור קל ושאלה אחת: איזו אנמיה מדברת?',
   teacherNote: 'שאלות קצרות על סימנים ייחודיים. כל שאלה כוללת הסבר ורמז לטיפול.',
   mount(root, ctx) {
     const O = k => ANEMIA_CATS[k].n;
@@ -153,11 +215,11 @@ registerGame({
       ['"שתן בצבע תה, עיניים צהובות וטחול מוגדל." מי אני?', 'hemo', 'צהבת, שתן כהה וטחול מוגדל – הסימנים הקלאסיים להמוליזה.'],
       ['"אני אנמיה קלה אצל חולה עם דלקת מפרקים שגרונית. הפריטין שלי גבוה אבל הברזל "נעול"." מי אני?', 'acd', 'פריטין תקין/גבוה, טרנספרין נמוך וסמני דלקת גבוהים – ברזל "כלוא" על ידי הפסידין.'],
       ['"חום, חבורות, פטכיות, זיהומים חוזרים – ובלי טחול מוגדל." מי אני?', 'aplastic', 'פנציטופניה: אנמיה + נויטרופניה + טסיות נמוכות. בחום – חירום רפואי.'],
-      ['"טבעונית אדוקה, לא לוקחת תוסף B12, ובשנים האחרונות לא בדקה דם." מי אני?', 'mega', 'B12 נמצא כמעט רק במוצרי חי. המאגר בכבד נגמר אחרי שנים, ואז מופיעה האנמיה.'],
+      ['"טבעונית קפדנית, לא נוטלת שום תוספי תזונה, ובשנים האחרונות לא בדקה דם." מי אני?', 'mega', 'B12 נמצא כמעט רק במוצרי חי. המאגר בכבד נגמר אחרי שנים, ואז מופיעה האנמיה.'],
       ['"אכלתי פול אצל סבתא, ויומיים אחר כך השתן כהה מאוד." מי אני?', 'hemo', 'חוסר באנזים G6PD – הפול הוא טריגר קלאסי להמוליזה חריפה.'],
       ['"וסת כבדה כבר שנים, MCV נמוך ופריטין נמוך." מי אני?', 'ida', 'איבוד דם כרוני מרוקן את מאגרי הברזל.'],
       ['"חולה בכליות כרוני, EPO נמוך, אנמיה נורמוציטית קלה-בינונית." מי אני?', 'acd', 'מחלת כליות כרונית – ירידה בייצור EPO + דלקת. הטיפול: ממריצי אריתרופויאזיס, ולפי הצורך ברזל.'],
-      ['"לוקח מטפורמין ותרופות להפחתת חומצה כבר שנים, MCV גבוה." מי אני?', 'mega', 'תרופות אלה עלולות לפגוע בספיגת B12 (פקטור פנימי).'],
+      ['"לוקח כבר שנים תרופות להפחתת חומציות בקיבה, MCV גבוה." מי אני?', 'mega', 'תרופות להפחתת חומציות הקיבה (וגם מטפורמין) עלולות לפגוע בספיגת B12.'],
     ];
     root.insertAdjacentHTML('afterbegin', say('נבדוק אם אתם בלשים טובים. קראו את הרמז – ובחרו את האנמיה! 🕵️', 'wink'));
     const items = shuffle(Q).slice(0, 8).map(q => ({ q: q[0], tag: CAT_TAG[q[1]], options: all.map(k => ({ t: O(k), ok: k === q[1], why: k === q[1] ? q[2] : '', tag: CAT_TAG[k] })), shuffle: true }));

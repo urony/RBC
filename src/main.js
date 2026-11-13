@@ -1,7 +1,7 @@
 'use strict';
 /* ===== ניווט ומסכים ראשיים ===== */
 const PARTS = {
-  A: { l: 'א׳', t: 'ללמוד ולשחק', d: 'תא הדם האדום, ייצור, ברזל וויטמינים, סוגי דם, וחמש האנמיות', col: 'var(--primary)', ic: '📘' },
+  A: { l: 'א׳', t: 'חזרה אינטראקטיבית על עקרונות חשובים', d: 'חזרה מהירה וחביבה על האנטומיה והפיזיולוגיה של תא הדם האדום, ועל חמש האנמיות', col: 'var(--primary)', ic: '📘' },
   B: { l: 'ב׳', t: 'אבחון מבדיקות דם', d: 'מקבלים בדיקות דם ומחליטים איזו אנמיה זו', col: 'var(--teal)', ic: '🧪' },
   C: { l: 'ג׳', t: 'תורנות מיון', d: 'מטופלים אמיתיים: שיחה, בדיקות, אבחנה וטיפול', col: 'var(--violet)', ic: '🚑' },
 };
@@ -17,7 +17,7 @@ function shell() {
   document.body.innerHTML = `<header class="topbar"><div class="brand" id="logo"><span style="width:34px;height:34px;display:inline-block">${ART.mascot_happy ? `<img src="${ART.mascot_happy}" alt="" style="width:100%;height:100%">` : mascotSVG('happy')}</span><span>${CFG.TITLE}</span></div><div class="sp"></div>${IS_TEACHER ? '<span class="chip t">🎓 מצב מורה</span>' : ''}<span class="chip" id="stars">⭐ 0</span></header>
   <main class="page" id="view"></main>
   <footer class="credit">פותח על ידי אורי העליון</footer>
-  <nav class="nav" aria-label="ניווט ראשי">${[['home', '🏠', 'בית'], ['a', '📘', 'א׳ ללמוד'], ['b', '🧪', 'ב׳ אבחון'], ['c', '🚑', 'ג׳ מיון'], ['me', '👤', 'אני']].filter(n => !LOCK || n[0] === 'me' || (n[0] !== 'home' && allowedParts().includes(n[0]))).concat(IS_TEACHER ? [['t', '🎓', 'מורה']] : []).map(n => `<a href="#/${n[0]}" data-n="${n[0]}"><span class="ic">${n[1]}</span><span>${n[2]}</span></a>`).join('')}</nav>`;
+  <nav class="nav" aria-label="ניווט ראשי">${[['home', '🏠', 'בית'], ['a', '📘', 'א׳ חזרה'], ['b', '🧪', 'ב׳ אבחון'], ['c', '🚑', 'ג׳ מיון'], ['me', '👤', 'אני']].filter(n => !LOCK || n[0] === 'me' || (n[0] !== 'home' && allowedParts().includes(n[0]))).concat(IS_TEACHER ? [['t', '🎓', 'מורה']] : []).map(n => `<a href="#/${n[0]}" data-n="${n[0]}"><span class="ic">${n[1]}</span><span>${n[2]}</span></a>`).join('')}</nav>`;
   $('#logo').onclick = () => location.hash = LOCK ? '#/' + allowedParts()[0] : '#/home';
 }
 function updateTop(route) {
@@ -57,7 +57,7 @@ function partPage(p) {
   const P = PARTS[p], gs = gamesOfPart(p);
   let h = `<div class="hero" style="${ART.hero_bg ? heroBg(p === 'A' ? 'rgba(160,30,55,.65),rgba(110,30,60,.5)' : p === 'B' ? 'rgba(15,110,115,.65),rgba(26,90,150,.5)' : 'rgba(110,70,200,.65),rgba(60,40,140,.5)') : 'background:linear-gradient(135deg,' + (p === 'A' ? '#d23b4c,#8e1b2e' : p === 'B' ? '#0f9b95,#1a6fa0' : '#7a4fd6,#4b2f9c') + ')'}">${mascot(p === 'C' ? 'think' : 'happy')}<div><h1>חלק ${P.l}: ${P.t}</h1><p>${P.d}</p></div></div>`;
   if (p === 'A') {
-    h += `<div class="card soft small">📘 חלק א׳ מסכם את מה שנלמד בכיתה, בעזרת משחקים. אפשר לעבוד לפי הסדר או לדלג בין יחידות.</div>`;
+    h += `<div class="card soft small">📘 כאן חוזרים בקצרה, בעזרת כלים קטנים ומשחקיים, על עקרונות חשובים באנטומיה ובפיזיולוגיה של תא הדם האדום. זה לא תחליף ללימוד, אלא חזרה מהירה וחביבה. אפשר לעבוד לפי הסדר או לדלג בין יחידות.</div>`;
     Object.keys(SECS).forEach(s => { const g = gs.filter(x => x.sec === s); h += `<div class="part"><h2 style="margin:0">${SECS[s][0]}</h2></div><p class="muted small" style="margin-top:0">${SECS[s][1]}</p><div class="grid">${g.map(tile).join('')}</div>`; });
   } else if (p === 'B') {
     h += `<div class="card soft"><b>איך זה עובד?</b> מקבלים תוצאות בדיקות דם ובוחרים: איזו אנמיה זו? כל רמה קשה יותר מקודמתה.</div><div class="grid">${gs.map(tile).join('')}</div>
