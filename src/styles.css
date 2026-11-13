@@ -257,3 +257,7 @@ svg.chart{direction:ltr}
 .kq li{margin:10px 0}
 .kans{color:var(--ok,#1a7f4b);font-weight:700;margin-top:2px}
 @media print{.topbar,.nav,.noprint,.toast{display:none!important}body{background:#fff!important}.card{box-shadow:none!important;break-inside:avoid}}
+
+.qm{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-inline-start:4px;padding:0;border-radius:50%;border:1px solid var(--line);background:var(--bg2);color:var(--primary);font:700 .75rem/1 inherit;cursor:pointer;vertical-align:middle}
+.qm[aria-expanded="true"]{background:var(--primary);color:#fff}
+.lab tr.hrow td{background:var(--bg2);font-size:.85rem;color:var(--ink);direction:rtl;text-align:start;font-weight:400}

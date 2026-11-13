@@ -13,6 +13,7 @@ function makePatient(type, edge) {
   p.age = Math.round(between(age[0], age[1])); return p;
 }
 function patientLine(p) { return `${p.sex === 'F' ? 'אישה' : 'גבר'} בת/בן ${p.age} · תלונה: עייפות וחולשה`.replace('בת/בן', p.sex === 'F' ? 'בת' : 'בן'); }
+function resetLabNote() { _labNoteShown = false; }
 function panelCard(p, keys, title, extra = '', hl = []) { return `<div class="card flat" style="padding:12px"><h3 style="margin-bottom:8px">${title}</h3>${labRows(keys, p.vals, p.sex, hl)}${extra}</div>`; }
 
 function feedbackDx(p, chosenCat) {
@@ -53,8 +54,8 @@ function runLabRounds(root, ctx, mode, types) {
     }
 
     if (mode === 1) {
-      labs.innerHTML = panelCard(p, PANEL.cbc, 'ספירת דם מלאה') + panelCard(p, PANEL.retic, 'רטיקולוציטים') + panelCard(p, PANEL.iron, 'פרופיל ברזל') + panelCard(p, PANEL.vit, 'ויטמינים') +
-        panelCard(p, PANEL.hemo, 'סמני המוליזה', `<div class="small" style="margin-top:8px">בדיקת קומבס (נוגדנים נגד כדוריות): <b>${p.coombs}</b></div>`) + panelCard(p, PANEL.infl, 'מדדי דלקת') +
+      labs.innerHTML = (resetLabNote(), '') + panelCard(p, PANEL.cbc, 'ספירת דם מלאה') + panelCard(p, PANEL.retic, 'רטיקולוציטים') + panelCard(p, PANEL.iron, 'פרופיל ברזל') + panelCard(p, PANEL.vit, 'ויטמינים') +
+        panelCard(p, PANEL.hemo, 'סמני המוליזה', `<div class="small" style="margin-top:8px">בדיקת קומבס (נוגדנים נגד תאי דם אדומים): <b>${p.coombs}</b></div>`) + panelCard(p, PANEL.infl, 'מדדי דלקת') +
         `<div class="card flat" style="padding:12px"><h3>משטח דם <span class="pill">איור סכמטי</span></h3><div class="smear">${smearSVG(p.smear, Math.floor(Math.random() * 9999))}</div><p class="muted small" style="margin:8px 0 0">${SMEAR_DESC[p.smear]}</p></div>`;
       const mcv = p.vals.MCV, cls = mcv < 80 ? 0 : mcv > 100 ? 2 : 1;
       mcq(q, { q: 'שלב 1: לפי ה-MCV, איזה סוג אנמיה זה?', tag: 'mcv_class', options: [{ t: 'מיקרוציטית (תאים קטנים)', ok: cls === 0, why: `MCV ${mcv} fL (תקין 80–100)` }, { t: 'נורמוציטית (גודל תקין)', ok: cls === 1, why: `MCV ${mcv} fL (תקין 80–100)` }, { t: 'מאקרוציטית (תאים גדולים)', ok: cls === 2, why: `MCV ${mcv} fL (תקין 80–100)` }], shuffle: false, onDone: () => { const q2 = el('<div></div>'); q.appendChild(el('<hr style="border:0;border-top:1px solid var(--line);margin:16px 0">')); q.appendChild(q2); dxStepIn(q2); } });
@@ -62,12 +63,12 @@ function runLabRounds(root, ctx, mode, types) {
         mcq(box, { q: 'שלב 2: מהי האנמיה?', tag: CAT_TAG[p.cat], options: opts, onDone: (ok, o) => { fb.innerHTML = feedbackDx(p, o._k); const sub = SUBDX[p.cat];
           if (ok && sub) { const q3 = el('<div class="card" style="margin-top:10px"></div>'); fb.appendChild(q3); const correct = sub.ok(p.cat === 'mega' ? p.vals : p), keys = Object.keys(sub.opts); mcq(q3, { q: sub.q, tag: 'sub_dx', options: keys.map(k => ({ t: sub.opts[k][0], ok: k === correct, why: sub.opts[k][1] })), onDone: ok2 => finish(0.7 + 0.3 * (ok2 ? 1 : 0)) }); } else finish(ok ? 1 : 0); } }); }
     } else if (mode === 2) {
-      labs.innerHTML = panelCard(p, PANEL.cbc, 'ספירת דם מלאה') + panelCard(p, PANEL.retic, 'רטיקולוציטים') + panelCard(p, PANEL.iron, 'פרופיל ברזל') + panelCard(p, PANEL.vit, 'ויטמינים') +
+      labs.innerHTML = (resetLabNote(), '') + panelCard(p, PANEL.cbc, 'ספירת דם מלאה') + panelCard(p, PANEL.retic, 'רטיקולוציטים') + panelCard(p, PANEL.iron, 'פרופיל ברזל') + panelCard(p, PANEL.vit, 'ויטמינים') +
         panelCard(p, PANEL.hemo, 'סמני המוליזה', `<div class="small" style="margin-top:8px">בדיקת קומבס: <b>${p.coombs}</b></div>`) + panelCard(p, PANEL.infl, 'מדדי דלקת');
       q.insertAdjacentHTML('afterbegin', '<div class="explain" style="margin-bottom:12px">⚠️ רמת קושי מתקדמת: הערכים בגבולות – לעיתים ה-MCV או הברזל "מטעים". חפשו את הדפוס כולו.</div>');
       dxStep();
     } else {
-      labs.innerHTML = panelCard(p, PANEL.cbc, 'ספירת דם מלאה') + panelCard(p, PANEL.retic, 'רטיקולוציטים');
+      labs.innerHTML = (resetLabNote(), '') + panelCard(p, PANEL.cbc, 'ספירת דם מלאה') + panelCard(p, PANEL.retic, 'רטיקולוציטים');
       const ok = NEXT_OK[type];
       mcq(q, { q: 'מה הבדיקה הבאה שתבקשו – זו שתקדם הכי הרבה את האבחנה?', tag: 'next_test', options: Object.keys(NEXT_OPTS).map(k => ({ t: NEXT_OPTS[k], ok: ok.includes(k), why: ok.includes(k) ? NEXT_WHY[k] : NEXT_WHY[k], _k: k })), onDone: (okN, o) => {
         const best = ok[0]; const keysOf = { iron: PANEL.iron, vit: PANEL.vit, hemo: PANEL.hemo, infl: PANEL.infl };

@@ -61,7 +61,7 @@ function partPage(p) {
     Object.keys(SECS).forEach(s => { const g = gs.filter(x => x.sec === s); h += `<div class="part"><h2 style="margin:0">${SECS[s][0]}</h2></div><p class="muted small" style="margin-top:0">${SECS[s][1]}</p><div class="grid">${g.map(tile).join('')}</div>`; });
   } else if (p === 'B') {
     h += `<div class="card soft"><b>איך זה עובד?</b> מקבלים תוצאות בדיקות דם ובוחרים: איזו אנמיה זו? כל רמה קשה יותר מקודמתה.</div><div class="grid">${gs.map(tile).join('')}</div>
-      <details class="card" style="margin-top:14px"><summary><b>📋 כרטיס עזר: ערכי ייחוס</b></summary><div style="margin-top:10px">${refTable()}<p class="small muted">ערכי הייחוס לפי הספר; ערכים שאינם מופיעים בו (MCH, RDW, MCHC, פריטין, ברזל, B12 וכו׳) הם טווחים מקובלים בלבד להמחשה.</p></div></details>`;
+      <details class="card" style="margin-top:14px"><summary><b>📋 כרטיס עזר: ערכי ייחוס</b></summary><div style="margin-top:10px">${refTable()}<p class="small muted">הטווחים מבוססים על הספר ועל ערכים מקובלים במעבדות. בחלק מהבדיקות (MCH, MCHC, RDW, CRP, ESR, ANC, קריאטינין) כתוב בהסבר שהן מעבר לחומרי הלימוד.</p></div></details>`;
   } else {
     h += `<div class="card soft small">🚑 לכל מטופל: אנמנזה ← בדיקה גופנית ← תוצאות בדיקות דם ← אבחנה, סיבה וטיפול.</div><div class="grid">${gs.map(tile).join('')}</div>`;
   }
@@ -71,7 +71,7 @@ function partPage(p) {
 }
 function refTable() {
   const keys = ['Hb', 'RBC', 'HCT', 'MCV', 'MCH', 'MCHC', 'RDW', 'RET', 'WBC', 'PLT', 'FER', 'FE', 'TRF', 'B12', 'FOL', 'BILI', 'LDH', 'HAPT', 'CRP', 'ESR'];
-  return `<table class="lab"><thead><tr><th>בדיקה</th><th>נשים</th><th>גברים</th></tr></thead><tbody>${keys.map(k => { const f = labRange(k, 'F'), m = labRange(k, 'M'); return `<tr><td>${LAB[k].n} <span class="muted small">${LAB[k].u}</span></td><td class="r">${f[0]}–${f[1]}</td><td class="r">${m[0]}–${m[1]}</td></tr>`; }).join('')}</tbody></table>`;
+  return `<div class="small muted" style="margin-bottom:6px">מעבדות שונות משתמשות בטווחי ייחוס מעט שונים. לחצו על ? להסבר.</div><table class="lab"><thead><tr><th>בדיקה</th><th>נשים</th><th>גברים</th></tr></thead><tbody>${keys.map(k => { const f = labRange(k, 'F'), m = labRange(k, 'M'); return `<tr><td>${LAB[k].n} <span class="muted small">${LAB[k].u}</span> ${labQ(k)}</td><td class="r">(${f[0]}–${f[1]})</td><td class="r">(${m[0]}–${m[1]})</td></tr>${labHelpRow(k, 3)}`; }).join('')}</tbody></table>`;
 }
 
 function mePage() {
@@ -102,6 +102,6 @@ function router() {
   updateTop(r);
   if (r === 'home') home(); else if (r === 'a' || r === 'b' || r === 'c') partPage(r.toUpperCase()); else if (r === 'me') mePage(); else if (r === 't' && IS_TEACHER) teacherPage(view()); else if (r === 'key' && IS_TEACHER) keyPage(view()); else home();
 }
-document.addEventListener('click', e => { const t = e.target.closest('[data-g]'); if (t) { location.hash = '#/g/' + t.dataset.g; } });
+document.addEventListener('click', e => { const q = e.target.closest('.qm'); if (q) { const nx = q.closest('tr').nextElementSibling; if (nx && nx.classList.contains('hrow')) { nx.hidden = !nx.hidden; q.setAttribute('aria-expanded', String(!nx.hidden)); } return; } const t = e.target.closest('[data-g]'); if (t) { location.hash = '#/g/' + t.dataset.g; } });
 window.addEventListener('hashchange', router);
 shell(); router();

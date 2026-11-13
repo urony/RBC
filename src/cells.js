@@ -69,17 +69,17 @@ function smearSVG(type, seed = 1) {
   return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="איור סכמטי של משטח דם">${SMEAR_DEFS}<rect width="${W}" height="${H}" fill="${SMEAR_BG}"/>${cells}${extras}${platelets(r, plt, W, H)}</svg>`;
 }
 const SMEAR_DESC = {
-  normal: 'כדוריות בגודל אחיד עם חיוורון מרכזי קל',
-  ida: 'כדוריות קטנות וחיוורות מאוד (מיקרוציטים היפוכרומיים), גדלים שונים, ותאים מוארכים כמו עיפרון',
-  mega: 'כדוריות גדולות ואליפטיות (מאקרו-אובלוציטים) ונויטרופיל עם גרעין מרובה אונות',
-  aiha: 'כדוריות קטנות, צפופות וכהות ללא חיוורון מרכזי (ספרוציטים) ותאים צעירים גדולים וסגלגלים (פוליכרומזיה)',
+  normal: 'תאי דם אדומים בגודל אחיד עם חיוורון מרכזי קל',
+  ida: 'תאי דם אדומים קטנים וחיוורים מאוד (מיקרוציטים היפוכרומיים), גדלים שונים, ותאים מוארכים כמו עיפרון',
+  mega: 'תאי דם אדומים גדולים ואליפטיים (מאקרו-אובלוציטים) ונויטרופיל עם גרעין מרובה אונות. במיקוד: "היפרכרומיים", כלומר עם הרבה המוגלובין בכל תא, אך MCHC תקין',
+  aiha: 'תאי דם אדומים קטנים, צפופים וכהים ללא חיוורון מרכזי (ספרוציטים) ותאים צעירים גדולים וסגלגלים (פוליכרומזיה)',
   g6pd: 'תאים "נגוסים" (bite cells) ותאי בועה (blister cells)',
-  sickle: 'תאי חרמש וכדוריות מטרה',
-  acd: 'כדוריות בגודל כמעט תקין, שונות קלה',
+  sickle: 'תאי חרמש ותאי מטרה',
+  acd: 'תאי דם אדומים בגודל כמעט תקין, שונות קלה',
   aplastic: 'מעט מאוד תאים, רקע ריק, בלי שורות צעירות',
 };
 
-/* פס כדוריות לסימולטור "מפעל הדם" */
+/* פס תאי דם אדומים לסימולטור "מפעל הדם" */
 function cellsStrip({ mcv = 90, mchc = 33, aniso = .1, n = 21, seed = 3, macroOval = false, count = 1 }) {
   const W = 320, H = 150, r = mulberry32(seed * 131 + 7);
   const base = 9.6 * Math.sqrt(mcv / 90);
@@ -93,7 +93,7 @@ function cellsStrip({ mcv = 90, mchc = 33, aniso = .1, n = 21, seed = 3, macroOv
     const ry = macroOval ? rx * .78 : rx * between(.93, 1, r);
     s += rbcShape(x, y, rx, ry, { rot: r() * 180, pal: pal * between(.9, 1.1, r) });
   }
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="כדוריות דם מומחשות">${SMEAR_DEFS}<rect width="${W}" height="${H}" rx="10" fill="${SMEAR_BG}"/>${s}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="תאי דם מומחשים">${SMEAR_DEFS}<rect width="${W}" height="${H}" rx="10" fill="${SMEAR_BG}"/>${s}</svg>`;
 }
 
 /* אנטיגנים/נוגדנים להמחשת סוגי דם */
