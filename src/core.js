@@ -175,8 +175,8 @@ function mcq(parent, spec) {
   return box;
 }
 /* סרגל קפיצה בין מטופלים: ממספר 1..n, ✓ = כבר נענה */
-function jumpBar(n, cur, answered, go) {
-  const bar = el(`<div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0" role="navigation" aria-label="מעבר בין מטופלים">${Array.from({ length: n }, (_, i) => `<button type="button" class="btn small${i === cur ? ' primary' : ''}" data-j="${i}" style="min-width:40px;padding:6px 10px" aria-label="מטופל ${i + 1}${answered[i] ? ', נענה' : ''}"${i === cur ? ' aria-current="true"' : ''}>${i + 1}${answered[i] ? ' ✓' : ''}</button>`).join('')}</div>`);
+function jumpBar(n, cur, answered, go, lbl = 'מטופל') {
+  const bar = el(`<div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0" role="navigation" aria-label="מעבר בין פריטים">${Array.from({ length: n }, (_, i) => `<button type="button" class="btn small${i === cur ? ' primary' : ''}" data-j="${i}" style="min-width:40px;padding:6px 10px" aria-label="${lbl} ${i + 1}${answered[i] ? ', נענה' : ''}"${i === cur ? ' aria-current="true"' : ''}>${i + 1}${answered[i] ? ' ✓' : ''}</button>`).join('')}</div>`);
   bar.onclick = e => { const b = e.target.closest('[data-j]'); if (b) go(+b.dataset.j); };
   return bar;
 }
@@ -184,22 +184,28 @@ function confettiSmall() { if (Math.random() < .25) confetti(6); }
 
 /* ריצת חידון – מספר שאלות ברצף */
 function runQuiz(root, ctx, items, o = {}) {
-  let i = 0, right = 0;
+  let cur = 0;
+  const res = items.map(() => null), cards = [];   // res[i]: null = לא נענתה, true/false = תשובה ראשונה
   const host = el(`<div></div>`); root.appendChild(host);
+  const nextUn = from => { for (let k = 1; k <= items.length; k++) { const j = (from + k) % items.length; if (res[j] == null) return j; } return -1; };
   function step() {
     host.innerHTML = '';
-    if (i >= items.length) { ctx.finish(Math.round(100 * right / items.length), o.after || ''); return; }
-    const it = items[i];
-    const head = el(`<div class="row sp small muted" style="margin-bottom:8px"><span>שאלה ${i + 1} מתוך ${items.length}</span><span>✓ ${right}</span></div>`);
-    const bar = el(`<div class="bar" style="margin-bottom:14px"><i style="width:${100 * i / items.length}%"></i></div>`);
-    host.append(head, bar);
-    const card = el(`<div class="card"></div>`); host.appendChild(card);
-    mcq(card, { ...it, onDone: ok => {
-      if (ok) right++;
-      const nx = el(`<button class="btn primary block" style="margin-top:14px">${i + 1 >= items.length ? 'לסיכום 🏁' : 'הבא ←'}</button>`);
-      nx.onclick = () => { i++; step(); };
-      card.appendChild(nx); nx.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    } });
+    const right = res.filter(x => x === true).length, nAns = res.filter(x => x != null).length;
+    host.append(
+      el(`<div class="row sp small muted" style="margin-bottom:8px"><span>שאלה ${cur + 1} מתוך ${items.length}</span><span>✓ ${right}</span></div>`),
+      el(`<div class="bar" style="margin-bottom:8px"><i style="width:${100 * nAns / items.length}%"></i></div>`),
+      jumpBar(items.length, cur, res.map(x => x != null), j => { cur = j; step(); window.scrollTo(0, 0); }, 'שאלה'));
+    if (!cards[cur]) {
+      const k = cur, card = el(`<div class="card" style="margin-top:8px"></div>`); cards[k] = card;
+      mcq(card, { ...items[k], onDone: ok => {
+        res[k] = ok;
+        const nxt = nextUn(k), last = nxt < 0;
+        const nx = el(`<button class="btn primary block" style="margin-top:14px">${last ? 'לסיכום 🏁' : 'הבא ←'}</button>`);
+        nx.onclick = () => { const nxt = nextUn(k), last = nxt < 0; if (last) ctx.finish(Math.round(100 * res.filter(x => x === true).length / items.length), o.after || ''); else { cur = nxt; step(); window.scrollTo(0, 0); } };
+        card.appendChild(nx); step(); nx.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } });
+    }
+    host.appendChild(cards[cur]);
   }
   step();
 }
@@ -237,10 +243,9 @@ function mountGame(id, root) {
   if (TGAME) hdr.querySelector('[data-back]').remove();
   if (IS_TEACHER && g.teacherNote) body.appendChild(el(`<div class="tnote"><b>הערה למורה:</b> ${g.teacherNote}</div>`));
   if (IS_TEACHER) { teacherGameView(g, body, makeCtx); return; }
-  if (!IS_TEACHER && g.id === 'a_o2') hdr.insertAdjacentHTML('beforeend', flowStrip());
   const start = comp => { body.innerHTML = ''; const ctx = makeCtx(g, body); if (comp) attachComp(ctx, g, hdr); g.mount(body, ctx); const gs = guideSay(g.id); if (gs) body.insertAdjacentHTML('afterbegin', gs); };
   if (g.part === 'B' || g.part === 'C') {
-    const ch = el(`<div class="card center"><h3 style="margin-top:0">איך תרצו לשחק?</h3><div class="row"><button class="btn primary grow" data-m="0">▶ משחק רגיל</button><button class="btn grow" data-m="1">⏱️ מצב תחרות</button></div><p class="small muted" style="margin:8px 0 0">בתחרות יש טיימר, בונוס מהירות ודירוג במכשיר. הניקוד הרגיל נשמר כרגיל.</p></div>`);
+    const ch = el(`<div class="card center"><h3 style="margin-top:0">איך תרצו לשחק?</h3><div class="row"><button class="btn primary grow" data-m="0">▶ משחק רגיל</button><button class="btn grow" data-m="1">⏱️ מצב תחרות</button></div>${compRules(g)}</div>`);
     body.appendChild(ch); ch.onclick = e => { const b = e.target.closest('[data-m]'); if (b) start(b.dataset.m === '1'); };
   } else start(false);
 }

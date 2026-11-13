@@ -163,4 +163,14 @@ const EXAMCAP = {
   c9: 'צואה שחורה ודביקה (מלנה): דימום מהמערכת העיכול העליונה. רגישות בבטן העליונה מתאימה לכיב אפשרי.',
 };
 
-const flowStrip = () => `<div class="flow" aria-hidden="true">${[0, 1, 2, 3, 4, 5, 6].map(i => `<i style="animation-delay:-${i}s"></i>`).join('')}</div>`;
+/* הסבר קצר על מצב תחרות, מוצג במסך הבחירה */
+function compRules(g) {
+  const target = gameSize(g) * (g.part === 'C' ? 110 : 60), maxB = Math.round(target * 1.5);
+  return `<details class="small" style="margin-top:10px;text-align:start"><summary style="cursor:pointer;font-weight:700">❓ מה זה מצב תחרות ואיך מנצחים?</summary>
+    <ul style="margin:8px 0 0;padding-inline-start:20px;line-height:1.6">
+      <li><b>הטיימר רץ</b> מרגע שהתחלתם ועד הסיום.</li>
+      <li><b>נקודות דיוק:</b> 10 נקודות על כל אחוז הצלחה (עד 1000).</li>
+      <li><b>בונוס מהירות:</b> אם סיימתם בפחות מ-${Math.round(target / 60)} דקות, כל שנייה שחסכתם נותנת 1.5 נקודות (עד ${maxB}). הבונוס ניתן רק מציון 40 ומעלה, כך שאין טעם למהר סתם.</li>
+      <li><b>כדי לנצח:</b> ענו נכון על כמה שיותר, ובמהירות סבירה. דיוק שווה יותר ממהירות.</li>
+      <li>בסוף תראו את חמש התוצאות הטובות ביותר <b>במכשיר הזה</b>. אין השוואה בין מכשירים, והניקוד הרגיל והכוכבים נשמרים כרגיל.</li></ul></details>`;
+}
